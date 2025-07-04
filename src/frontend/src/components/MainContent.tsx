@@ -260,7 +260,7 @@ const MainContent: React.FC = () => {
       <div className="container">
         <div className="chat-container">
           <div className="chat-header">
-            <h1>Semker Chat</h1>
+            <h1>Semantic Kernel Agentic AI Chat</h1>
             <div className="connection-status">
               <span className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
                 ●
