@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { apiService } from '../services/apiService';
 
 interface Message {
@@ -144,7 +145,7 @@ const MainContent: React.FC = () => {
               
               const finalMessage: ChatMessage = {
                 id: `final-${messageId}`,
-                text: `✅ Message processed successfully! ${latestUpdate.result || ''}`,
+                text: `✅ ${latestUpdate.result || ''}`,
                 timestamp: new Date(latestUpdate.processed_at),
                 isUser: false,
                 status: 'processed',
@@ -298,8 +299,10 @@ const MainContent: React.FC = () => {
                           <span></span>
                           <span></span>
                         </div>
-                      ) : (
+                      ) : message.isUser ? (
                         message.text
+                      ) : (
+                        <ReactMarkdown>{message.text}</ReactMarkdown>
                       )}
                     </div>
                     <div className="message-meta">

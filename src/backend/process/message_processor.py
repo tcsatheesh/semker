@@ -91,7 +91,7 @@ class MessageProcessor:
                 message_id=message_id,
                 status=MessageStatus.PROCESSED,
                 processed_at=datetime.now(),
-                result=f"Processed message: {message_content}"
+                result=f"**Processed message successfully!**\n\nYour message: *{message_content}*\n\n✅ Processing completed\n\n```\nMessage ID: {message_id}\nStatus: PROCESSED\n```"
             )
             
             self.updates_store[message_id].append(final_update)
