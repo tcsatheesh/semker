@@ -1,0 +1,158 @@
+"""
+Main FastAPI application for Semker Async Message Processing API
+"""
+
+import os
+from typing import List, Dict, Any, Optional, Callable
+from fastapi import FastAPI, HTTPException, BackgroundTasks, status
+from fastapi.responses import RedirectResponse
+
+from models import Message, MessageResponse, UpdateResponse, HealthResponse
+from process import MessageProcessor
+from config import (
+    APISettings, ContactSettings, LicenseSettings, ServerSettings,
+    Routes, Tags, Summaries, Descriptions
+)
+
+# Initialize telemetry if enabled
+telemetry_enabled = os.getenv("TELEMETRY_ENABLED", "true").lower() == "true"
+
+# Import telemetry modules if enabled
+TelemetryMiddleware: Optional[type] = None
+configure_telemetry: Optional[Callable[..., None]] = None
+instrument_fastapi: Optional[Callable[[Any], None]] = None
+
+if telemetry_enabled:
+    try:
+        from telemetry import configure_telemetry as _configure_telemetry, instrument_fastapi as _instrument_fastapi, TelemetryMiddleware as _TelemetryMiddleware
+        
+        # Assign to our typed variables
+        configure_telemetry = _configure_telemetry
+        instrument_fastapi = _instrument_fastapi
+        TelemetryMiddleware = _TelemetryMiddleware
+        
+        # Configure OpenTelemetry
+        configure_telemetry(
+            enable_console=os.getenv("TELEMETRY_CONSOLE", "false").lower() == "true"
+        )
+        print("🔭 Telemetry configured and enabled")
+    except ImportError as e:
+        print(f"⚠️  Telemetry disabled due to import error: {e}")
+        telemetry_enabled = False
+
+# Initialize the message processor
+message_processor = MessageProcessor()
+
+# FastAPI app with comprehensive OpenAPI documentation
+app = FastAPI(
+    title=APISettings.TITLE,
+    description=APISettings.DESCRIPTION,
+    version=APISettings.VERSION,
+    contact={
+        "name": ContactSettings.NAME,
+        "email": ContactSettings.EMAIL,
+    },
+    license_info={
+        "name": LicenseSettings.NAME,
+        "url": LicenseSettings.URL,
+    },
+    servers=[
+        {
+            "url": ServerSettings.DEFAULT_URL,
+            "description": ServerSettings.DEFAULT_DESCRIPTION
+        }
+    ]
+)
+
+# Add telemetry middleware and instrumentation
+if telemetry_enabled and TelemetryMiddleware is not None and instrument_fastapi is not None:
+    app.add_middleware(TelemetryMiddleware)  # type: ignore[arg-type]
+    instrument_fastapi(app)
+
+
+@app.post(Routes.MESSAGES, 
+         response_model=MessageResponse,
+         status_code=status.HTTP_201_CREATED,
+         tags=[Tags.MESSAGES],
+         summary=Summaries.SUBMIT_MESSAGE,
+         description=Descriptions.SUBMIT_MESSAGE)
+async def receive_message(message: Message, background_tasks: BackgroundTasks) -> MessageResponse:
+    """Submit a message for asynchronous processing."""
+    response: MessageResponse = await message_processor.submit_message(message)
+    
+    # Start background processing
+    background_tasks.add_task(message_processor.process_message_async, response.message_id, message.content)
+    
+    return response
+
+
+@app.get(Routes.MESSAGE_UPDATES, 
+        response_model=List[UpdateResponse],
+        tags=[Tags.MESSAGES],
+        summary=Summaries.GET_UPDATES,
+        description=Descriptions.GET_UPDATES)
+async def get_updates(message_id: str) -> List[UpdateResponse]:
+    """Get all processing updates for a specific message."""
+    try:
+        updates: List[UpdateResponse] = message_processor.get_message_updates(message_id)
+        return updates
+    except KeyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )
+
+
+@app.get(Routes.MESSAGE_STATUS,
+        tags=[Tags.MESSAGES],
+        summary=Summaries.GET_STATUS,
+        description=Descriptions.GET_STATUS)
+async def get_message_status(message_id: str) -> Dict[str, Any]:
+    """Get the current status of a message."""
+    try:
+        status_info: Dict[str, Any] = message_processor.get_message_status(message_id)
+        return status_info
+    except KeyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )
+
+
+@app.get(Routes.MESSAGES,
+        tags=[Tags.MESSAGES],
+        summary=Summaries.LIST_MESSAGES,
+        description=Descriptions.LIST_MESSAGES)
+async def list_messages() -> Dict[str, Any]:
+    """List all messages in the system."""
+    messages: Dict[str, Any] = message_processor.list_all_messages()
+    return messages
+
+
+@app.get(Routes.HEALTH,
+        response_model=HealthResponse,
+        tags=[Tags.SYSTEM],
+        summary=Summaries.HEALTH_CHECK,
+        description=Descriptions.HEALTH_CHECK)
+async def health_check() -> HealthResponse:
+    """Health check endpoint for monitoring service status."""
+    health_status: HealthResponse = message_processor.get_health_status()
+    return health_status
+
+
+@app.get(Routes.ROOT,
+        tags=[Tags.SYSTEM],
+        summary=Summaries.ROOT,
+        description=Descriptions.ROOT)
+async def root() -> RedirectResponse:
+    """Root endpoint - redirects to interactive API documentation."""
+    return RedirectResponse(url=Routes.DOCS)
+
+
+@app.get(Routes.SWAGGER,
+        tags=[Tags.DOCUMENTATION],
+        summary=Summaries.SWAGGER_REDIRECT,
+        description=Descriptions.SWAGGER_REDIRECT)
+async def swagger_redirect() -> RedirectResponse:
+    """Alternative endpoint that redirects to Swagger UI documentation."""
+    return RedirectResponse(url=Routes.DOCS)
