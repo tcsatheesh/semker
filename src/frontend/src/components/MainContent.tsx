@@ -110,9 +110,9 @@ const MainContent: React.FC = () => {
           // Create appropriate message text based on status
           let messageText = '';
           if (latestUpdate.status === 'received') {
-            messageText = `✅ Message received and queued for processing... (${formatDuration(duration)})`;
+            messageText = `✅ Message received and queued for processing...`;
           } else if (latestUpdate.status === 'processing') {
-            messageText = `⚡ Processing your message... (${formatDuration(duration)})`;
+            messageText = `⚡ Processing your message...`;
           } else {
             messageText = `Processing... Status: ${latestUpdate.status}`;
           }
