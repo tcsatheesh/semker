@@ -4,14 +4,14 @@ OpenTelemetry configuration for Semker backend integration with .NET Aspire Dash
 
 import logging
 import os
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 from opentelemetry import trace, metrics, _logs
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.requests import RequestsInstrumentor
-from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor  # type: ignore
+from opentelemetry.instrumentation.requests import RequestsInstrumentor  # type: ignore
+from opentelemetry.instrumentation.logging import LoggingInstrumentor  # type: ignore
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.metrics import MeterProvider
@@ -135,26 +135,6 @@ def instrument_fastapi(app: Any) -> None:
     RequestsInstrumentor().instrument()
     
     print("🔍 FastAPI instrumentation enabled")
-
-
-def _server_request_hook(span: Any, scope: Dict[str, Any]) -> None:
-    """Add custom attributes to server request spans."""
-    if span and hasattr(span, 'is_recording') and span.is_recording():
-        # Add custom attributes
-        if hasattr(span, 'set_attribute'):
-            span.set_attribute("semker.service", "backend")
-            span.set_attribute("semker.version", SERVICE_VERSION_VALUE)
-            
-            # Add request information
-            if "path" in scope:
-                span.set_attribute("http.route", scope["path"])
-
-
-def _client_request_hook(span: Any, request: Any) -> None:
-    """Add custom attributes to client request spans."""
-    if span and hasattr(span, 'is_recording') and span.is_recording():
-        if hasattr(span, 'set_attribute'):
-            span.set_attribute("semker.client", "requests")
 
 
 def get_tracer(name: Optional[str] = None) -> trace.Tracer:
