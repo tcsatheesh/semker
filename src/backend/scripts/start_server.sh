@@ -18,5 +18,5 @@ if command -v uv &> /dev/null; then
     uv run uvicorn api:app --host 0.0.0.0 --port 8000 --reload
 else
     echo "uv not found, using python directly..."
-    python main.py
+    python api.py
 fi
