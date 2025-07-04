@@ -1,33 +1,319 @@
-# Semker - Async FastAPI Backend Service
+# Semker Backend - FastAPI Async Message Processing
 
-A FastAPI backend service with asynchronous message processing capabilities.
+A high-performance FastAPI backend service providing asynchronous message processing with real-time status tracking, comprehensive testing, and modern API design.
+
+## Features
+
+### 🚀 **Core Capabilities**
+- **Asynchronous Processing**: Non-blocking message handling with background tasks
+- **Real-time Status Tracking**: Live updates from received → processing → processed
+- **Health Monitoring**: Built-in health checks with uptime and version info
+- **Type Safety**: Full Pydantic model validation and OpenAPI documentation
+- **CORS Support**: Configurable cross-origin resource sharing
+- **Telemetry Ready**: Optional observability and monitoring
+
+### 🧪 **Testing & Quality**
+- **BDD Testing**: Comprehensive behavior-driven development test suite
+- **API Documentation**: Auto-generated OpenAPI/Swagger docs
+- **Error Handling**: Robust error responses with proper HTTP status codes
+- **Validation**: Request/response validation with detailed error messages
+
+## Quick Start
+
+### Setup
+```bash
+# Navigate to backend directory
+cd src/backend
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the server
+python -m uvicorn api:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Verify Installation
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# API documentation
+open http://localhost:8000/docs
+```
 
 ## Project Structure
 
 ```
-semker/
-├── .gitignore                      # Git ignore rules
-├── README.md                       # Root project README
-└── src/
-    └── backend/
-        ├── models/
-        │   ├── __init__.py
-        │   └── schemas.py          # Pydantic models
-        ├── process/
-        │   ├── __init__.py
-        │   └── message_processor.py # Message processing logic
-        ├── tests/
-        │   └── features/
-        │       ├── environment.py  # BDD test environment setup
-        │       ├── error_handling.feature  # Error handling tests
-        │       ├── message_api.feature     # Main API tests
-        │       ├── smoke_test.feature      # Smoke tests
-        │       └── steps/
-        │           └── api_steps.py        # Step definitions
-        ├── config/
-        │   ├── __init__.py
-        │   ├── settings.py         # Environment-dependent configuration
-        │   └── constants.py        # Immutable application constants
+src/backend/
+├── README.md                   # This file
+├── requirements.txt            # Python dependencies
+├── .env.example               # Environment variables template
+├── api.py                     # Main FastAPI application
+├── models/
+│   ├── __init__.py
+│   └── schemas.py             # Pydantic data models
+├── process/
+│   ├── __init__.py
+│   └── message_processor.py   # Core message processing logic
+├── config/
+│   ├── __init__.py
+│   ├── settings.py            # Environment-based configuration
+│   └── constants.py           # Application constants
+├── tests/
+│   └── features/
+│       ├── environment.py     # BDD test setup
+│       ├── message_api.feature
+│       ├── error_handling.feature
+│       ├── smoke_test.feature
+│       └── steps/
+│           └── api_steps.py   # Test step definitions
+├── scripts/
+│   ├── test_cors.sh          # CORS testing script
+│   └── README.md
+└── telemetry/
+    ├── __init__.py
+    ├── middleware.py         # Telemetry middleware
+    └── README.md
+```
+
+## API Endpoints
+
+### Core Messages API
+- **POST /messages** - Submit message for processing
+- **GET /messages** - List all messages with pagination
+- **GET /messages/{id}** - Get specific message details
+- **GET /messages/{id}/updates** - Get real-time processing updates
+
+### System Endpoints
+- **GET /health** - Health check with uptime and version
+- **GET /** - Root endpoint with API information
+- **GET /docs** - Interactive API documentation
+- **GET /redoc** - Alternative API documentation
+
+### Example Usage
+
+#### Submit Message
+```bash
+curl -X POST http://localhost:8000/messages \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Process this message"}'
+
+# Response
+{
+  "message_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "received", 
+  "received_at": "2025-07-04T10:30:00.123456"
+}
+```
+
+#### Check Processing Updates
+```bash
+curl http://localhost:8000/messages/550e8400-e29b-41d4-a716-446655440000/updates
+
+# Response
+[
+  {
+    "message_id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "processing",
+    "processed_at": "2025-07-04T10:30:00.234567",
+    "result": "Message is being processed..."
+  },
+  {
+    "message_id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "processed", 
+    "processed_at": "2025-07-04T10:30:02.345678",
+    "result": "Processed message: Process this message..."
+  }
+]
+```
+
+## Configuration
+
+### Environment Variables (.env)
+```bash
+# CORS Configuration
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CORS_ALLOW_CREDENTIALS=true
+CORS_ALLOW_METHODS=*
+CORS_ALLOW_HEADERS=*
+
+# Message Processing
+MESSAGE_PROCESSING_DELAY=2.0
+
+# Logging
+LOG_LEVEL=INFO
+
+# Telemetry (optional)
+TELEMETRY_ENABLED=false
+TELEMETRY_SERVICE_NAME=semker-backend
+TELEMETRY_SERVICE_VERSION=1.0.0
+```
+
+### Server Settings
+The backend automatically configures itself based on environment variables with sensible defaults.
+
+## Data Models
+
+### Message Schema (Input)
+```python
+class Message(BaseModel):
+    message: str = Field(description="The message content to be processed")
+```
+
+### MessageResponse Schema (Output)
+```python
+class MessageResponse(BaseModel):
+    message_id: str = Field(description="Unique identifier for the message")
+    status: str = Field(description="Current status of the message")
+    received_at: datetime = Field(description="Timestamp when message was received")
+```
+
+### UpdateResponse Schema
+```python
+class UpdateResponse(BaseModel):
+    message_id: str = Field(description="Unique identifier for the message")
+    status: str = Field(description="Processing status")
+    processed_at: datetime = Field(description="Timestamp when processing completed")
+    result: Optional[str] = Field(None, description="Processing result or summary")
+```
+
+## Message Processing Flow
+
+1. **Submit** → Message received, assigned UUID, stored with "received" status
+2. **Queue** → Background task initiated for asynchronous processing
+3. **Process** → Status updated to "processing", intermediate update stored
+4. **Complete** → Status updated to "processed", final result stored
+5. **Retrieve** → Client can poll `/updates` endpoint for real-time status
+
+## Testing
+
+### Run BDD Tests
+```bash
+# Run all tests
+python -m behave tests/features/
+
+# Run specific feature
+python -m behave tests/features/message_api.feature
+
+# Run with verbose output
+python -m behave tests/features/ --verbose
+
+# Run smoke tests only
+python -m behave tests/features/ --tags=smoke
+```
+
+### Test Coverage
+- **Message API**: Submit, retrieve, and update messages
+- **Error Handling**: Invalid requests, missing resources, validation errors  
+- **Health Checks**: Service availability and status
+- **CORS**: Cross-origin request handling
+
+### Manual Testing
+```bash
+# Test CORS
+./scripts/test_cors.sh
+
+# Health check
+curl http://localhost:8000/health
+
+# Submit test message
+curl -X POST http://localhost:8000/messages \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Test message"}'
+```
+
+## Development
+
+### Architecture
+- **FastAPI Framework**: Modern async Python web framework
+- **Pydantic Models**: Type-safe data validation and serialization
+- **Background Tasks**: Async message processing without blocking
+- **In-Memory Storage**: Simple message storage (production: use database)
+- **Middleware Stack**: CORS, telemetry, and custom middleware support
+
+### Key Components
+- **api.py**: Main application with route definitions
+- **MessageProcessor**: Core business logic for message handling
+- **Configuration**: Environment-based settings management
+- **Models**: Pydantic schemas for request/response validation
+
+### Adding New Features
+1. Define new Pydantic models in `models/schemas.py`
+2. Add business logic to appropriate processor
+3. Create new routes in `api.py`
+4. Add BDD tests in `tests/features/`
+5. Update documentation
+
+### Performance Considerations
+- **Async Operations**: All I/O operations are async
+- **Background Processing**: CPU-intensive tasks run in background
+- **Memory Usage**: Current in-memory storage scales to available RAM
+- **Connection Pooling**: FastAPI handles connection pooling automatically
+
+## Deployment
+
+### Production Considerations
+```bash
+# Production server with Gunicorn
+pip install gunicorn
+gunicorn api:app -w 4 -k uvicorn.workers.UvicornWorker
+
+# Docker deployment
+# See Dockerfile in project root
+
+# Environment variables for production
+CORS_ORIGINS=https://yourdomain.com
+LOG_LEVEL=WARNING
+MESSAGE_PROCESSING_DELAY=1.0
+```
+
+### Monitoring
+- Health endpoint provides uptime and version info
+- Optional telemetry integration for observability
+- Structured logging for debugging and monitoring
+
+## Troubleshooting
+
+### Common Issues
+1. **Import Errors**: Ensure virtual environment is activated
+2. **Port Conflicts**: Check if port 8000 is available
+3. **CORS Errors**: Verify CORS_ORIGINS includes frontend URL
+4. **Permission Errors**: Check file permissions for .env files
+
+### Debug Mode
+```bash
+# Enable debug logging
+LOG_LEVEL=DEBUG python -m uvicorn api:app --reload
+
+# Check configuration
+python -c "from config.settings import ServerSettings; print(vars(ServerSettings))"
+```
+
+## Contributing
+
+1. Follow PEP 8 style guidelines
+2. Add type hints to all functions
+3. Write BDD tests for new features
+4. Update documentation
+5. Ensure all tests pass before submitting PR
+
+## Dependencies
+
+### Core Dependencies
+- **fastapi**: Modern web framework
+- **uvicorn**: ASGI server
+- **pydantic**: Data validation and serialization
+- **python-multipart**: Form data parsing
+
+### Development Dependencies  
+- **behave**: BDD testing framework
+- **requests**: HTTP client for testing
+
+For complete dependency list, see `requirements.txt`.
         ├── .behaverc               # Behave configuration
         ├── .python-version         # Python version specification
         ├── __init__.py
@@ -101,8 +387,7 @@ This architecture ensures:
 - **Request Body**:
 ```json
 {
-  "content": "Your message content here",
-  "sender": "sender_name"
+  "message": "Your message content here"
 }
 ```
 - **Response**:
@@ -263,7 +548,7 @@ tests/
 ```bash
 curl -X POST "http://localhost:8000/messages" \
   -H "Content-Type: application/json" \
-  -d '{"content": "Hello, async world!", "sender": "test_user"}'
+  -d '{"message": "Hello, async world!"}'
 ```
 
 2. Get updates (replace `{message_id}` with actual ID):
@@ -274,6 +559,61 @@ curl "http://localhost:8000/messages/{message_id}/updates"
 3. Get message status:
 ```bash
 curl "http://localhost:8000/messages/{message_id}/status"
+```
+
+## Configuration
+
+The API can be configured using environment variables. Copy `.env.example` to `.env` and modify as needed:
+
+```bash
+cp .env.example .env
+```
+
+### Available Environment Variables
+
+#### CORS Configuration
+- **`CORS_ORIGINS`**: Comma-separated list of allowed origins (default: `http://localhost:3000,http://127.0.0.1:3000`)
+- **`CORS_ALLOW_CREDENTIALS`**: Allow credentials in CORS requests (default: `true`)
+- **`CORS_ALLOW_METHODS`**: Allowed HTTP methods (default: `*`)
+- **`CORS_ALLOW_HEADERS`**: Allowed HTTP headers (default: `*`)
+
+#### API Settings
+- **`API_TITLE`**: API title in OpenAPI documentation
+- **`API_VERSION`**: API version
+- **`API_DESCRIPTION`**: API description
+- **`DEBUG`**: Enable debug mode (default: `false`)
+
+#### Server Settings
+- **`SERVER_HOST`**: Server host (default: `localhost`)
+- **`SERVER_PORT`**: Server port (default: `8000`)
+- **`SERVER_URL`**: Server URL for OpenAPI documentation
+- **`MESSAGE_PROCESSING_DELAY`**: Processing delay in seconds (default: `2.0`)
+- **`MAX_MESSAGE_LENGTH`**: Maximum message length (default: `10000`)
+
+#### Contact Information
+- **`CONTACT_NAME`**: API contact name
+- **`CONTACT_EMAIL`**: API contact email
+- **`CONTACT_URL`**: API contact URL
+
+#### Telemetry (Optional)
+- **`TELEMETRY_ENABLED`**: Enable OpenTelemetry (default: `true`)
+- **`TELEMETRY_CONSOLE`**: Enable console telemetry output (default: `false`)
+- **`OTLP_ENDPOINT`**: OpenTelemetry collector endpoint
+
+### Example Configuration
+
+```bash
+# CORS for frontend integration
+CORS_ORIGINS=http://localhost:3000,https://my-frontend.com
+CORS_ALLOW_CREDENTIALS=true
+
+# API customization
+API_TITLE=My Custom API
+DEBUG=true
+
+# Server settings
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8080
 ```
 
 ## Message Processing Flow

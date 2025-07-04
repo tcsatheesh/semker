@@ -38,7 +38,7 @@ POST_RESPONSE=$(curl -s -w "\n%{http_code}" \
   -H "Origin: $FRONTEND_ORIGIN" \
   -H "Content-Type: application/json" \
   -X POST \
-  -d '{"content":"CORS test message","sender":"cors_test"}' \
+  -d '{"message":"CORS test message"}' \
   "$API_URL/messages")
 
 HTTP_CODE=$(echo "$POST_RESPONSE" | tail -n1)

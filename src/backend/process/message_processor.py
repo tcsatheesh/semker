@@ -32,7 +32,7 @@ class MessageProcessor:
         Submit a message for asynchronous processing.
         
         Args:
-            message: The message object containing content and sender
+            message: The message object containing the message content
             
         Returns:
             MessageResponse with message ID and initial status
@@ -42,8 +42,7 @@ class MessageProcessor:
         
         # Store the message
         self.messages_store[message_id] = {
-            "content": message.content,
-            "sender": message.sender,
+            "content": message.message,
             "timestamp": timestamp,
             "status": MessageStatus.RECEIVED
         }
@@ -57,30 +56,45 @@ class MessageProcessor:
     
     async def process_message_async(self, message_id: str, message_content: str) -> None:
         """
-        Simulate async message processing.
+        Simulate async message processing with intermediate status updates.
         
         Args:
             message_id: The unique identifier of the message
             message_content: The content of the message to process
         """
-        await asyncio.sleep(ServerSettings.MESSAGE_PROCESSING_DELAY)  # Configurable processing time
+        # Set initial processing status
+        if message_id in self.messages_store:
+            self.messages_store[message_id]["status"] = MessageStatus.PROCESSING
+            
+            # Store intermediate update
+            processing_update = UpdateResponse(
+                message_id=message_id,
+                status=MessageStatus.PROCESSING,
+                processed_at=datetime.now(),
+                result="Message is being processed..."
+            )
+            
+            if message_id not in self.updates_store:
+                self.updates_store[message_id] = []
+            self.updates_store[message_id].append(processing_update)
         
-        # Update the message status
+        # Simulate processing time
+        await asyncio.sleep(ServerSettings.MESSAGE_PROCESSING_DELAY)
+        
+        # Update to final processed status
         if message_id in self.messages_store:
             self.messages_store[message_id]["status"] = MessageStatus.PROCESSED
             self.messages_store[message_id]["processed_at"] = datetime.now()
             
-            # Store the update
-            update = UpdateResponse(
+            # Store the final update
+            final_update = UpdateResponse(
                 message_id=message_id,
                 status=MessageStatus.PROCESSED,
                 processed_at=datetime.now(),
                 result=f"Processed message: {message_content[:50]}..."
             )
             
-            if message_id not in self.updates_store:
-                self.updates_store[message_id] = []
-            self.updates_store[message_id].append(update)
+            self.updates_store[message_id].append(final_update)
     
     def get_message_updates(self, message_id: str) -> List[UpdateResponse]:
         """
@@ -121,7 +135,6 @@ class MessageProcessor:
             "message_id": message_id,
             "status": message_data["status"],
             "content": message_data["content"],
-            "sender": message_data["sender"],
             "timestamp": message_data["timestamp"]
         }
     
@@ -138,7 +151,6 @@ class MessageProcessor:
                 {
                     "message_id": msg_id,
                     "status": msg_data["status"],
-                    "sender": msg_data["sender"],
                     "timestamp": msg_data["timestamp"]
                 }
                 for msg_id, msg_data in self.messages_store.items()

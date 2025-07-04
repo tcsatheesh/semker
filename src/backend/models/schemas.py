@@ -9,15 +9,12 @@ from pydantic import BaseModel, Field
 
 class Message(BaseModel):
     """Message model for incoming requests"""
-    content: str = Field(description="The message content to be processed")
-    sender: str = Field(description="The sender of the message")
-    timestamp: Optional[datetime] = Field(None, description="Optional timestamp, will be auto-generated if not provided")
+    message: str = Field(description="The message content to be processed")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "content": "This is a sample message for processing",
-                "sender": "john_doe"
+                "message": "This is a sample message for processing"
             }
         }
 

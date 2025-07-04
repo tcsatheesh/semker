@@ -42,14 +42,13 @@ interface HealthResponse {
 
 interface Message {
   id: string;
-  content: string;
+  message: string;
   timestamp: string;
   status: string;
 }
 
 interface CreateMessageRequest {
-  content: string;
-  sender: string;
+  message: string;
 }
 
 interface CreateMessageResponse {
@@ -81,15 +80,15 @@ export const apiService = {
   },
 
   // Create a new message
-  async createMessage(content: string, sender: string = 'anonymous'): Promise<Message> {
+  async createMessage(message: string): Promise<Message> {
     try {
-      const payload: CreateMessageRequest = { content, sender };
+      const payload: CreateMessageRequest = { message };
       const response = await api.post<CreateMessageResponse>('/messages', payload);
       
       // Transform the response to match our Message interface
       return {
         id: response.data.message_id,
-        content: content, // Return the content we sent
+        message: message, // Return the message we sent
         timestamp: response.data.received_at,
         status: response.data.status
       };
@@ -108,7 +107,7 @@ export const apiService = {
       if (data && Array.isArray(data.messages)) {
         return data.messages.map((msg: any) => ({
           id: msg.message_id || msg.id,
-          content: msg.content,
+          message: msg.message,
           timestamp: msg.received_at || msg.timestamp,
           status: msg.status
         }));
@@ -128,6 +127,18 @@ export const apiService = {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to fetch message with id: ${id}`);
+    }
+  },
+
+  // Get message updates/status for polling
+  async getMessageUpdates(messageId: string): Promise<any[]> {
+    try {
+      const response = await api.get(`/messages/${messageId}/updates`);
+      // Backend returns the updates array directly, not wrapped in { updates: [] }
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.warn(`Updates endpoint error for message ${messageId}:`, error);
+      return [];
     }
   },
 

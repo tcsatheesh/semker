@@ -37,12 +37,11 @@ def step_given_api_accessible(context: Any, url: str) -> None:
     context.base_url = url
 
 
-@given('I have submitted a message with content "{content}" from sender "{sender}"')  # type: ignore
-def step_given_message_submitted(context: Any, content: str, sender: str) -> None:
+@given('I have submitted a message with message "{message}"')  # type: ignore
+def step_given_message_submitted(context: Any, message: str) -> None:
     """Submit a message and store the response"""
     message_data: Dict[str, str] = {
-        "content": content,
-        "sender": sender
+        "message": message
     }
     
     response: requests.Response = requests.post(f"{base_url}/messages", json=message_data)
@@ -56,9 +55,9 @@ def step_given_message_submitted(context: Any, content: str, sender: str) -> Non
 def step_given_multiple_messages_submitted(context: Any) -> None:
     """Submit multiple messages for testing"""
     messages: List[Dict[str, str]] = [
-        {"content": "First test message", "sender": "test_user_1"},
-        {"content": "Second test message", "sender": "test_user_2"},
-        {"content": "Third test message", "sender": "test_user_3"}
+        {"message": "First test message"},
+        {"message": "Second test message"},
+        {"message": "Third test message"}
     ]
     
     # Initialize list without type annotation on assignment
@@ -71,12 +70,11 @@ def step_given_multiple_messages_submitted(context: Any) -> None:
     context.submitted_messages = submitted_messages
 
 
-@when('I submit a message with content "{content}" from sender "{sender}"')  # type: ignore
-def step_when_submit_message(context: Any, content: str, sender: str) -> None:
+@when('I submit a message with message "{message}"')  # type: ignore
+def step_when_submit_message(context: Any, message: str) -> None:
     """Submit a message to the API"""
     message_data: Dict[str, str] = {
-        "content": content,
-        "sender": sender
+        "message": message
     }
     
     context.response = requests.post(f"{base_url}/messages", json=message_data)
@@ -84,24 +82,13 @@ def step_when_submit_message(context: Any, content: str, sender: str) -> None:
         context.response_data = context.response.json()
 
 
-@when('I submit an invalid message without content')  # type: ignore
-def step_when_submit_invalid_message_no_content(context: Any) -> None:
-    """Submit a message without content field"""
-    message_data: Dict[str, str] = {
-        "sender": "test_user"
-    }
+@when('I submit an invalid message without message')  # type: ignore
+def step_when_submit_invalid_message_no_message(context: Any) -> None:
+    """Submit a message without message field"""
+    message_data: Dict[str, str] = {}
     
     context.response = requests.post(f"{base_url}/messages", json=message_data)
 
-
-@when('I submit an invalid message without sender')  # type: ignore
-def step_when_submit_invalid_message_no_sender(context: Any) -> None:
-    """Submit a message without sender field"""
-    message_data: Dict[str, str] = {
-        "content": "Test message"
-    }
-    
-    context.response = requests.post(f"{base_url}/messages", json=message_data)
 
 
 @when('I request the message status')  # type: ignore
@@ -183,7 +170,6 @@ def step_then_get_message_details(context: Any) -> None:
     assert "message_id" in context.response_data
     assert "status" in context.response_data
     assert "content" in context.response_data
-    assert "sender" in context.response_data
     assert "timestamp" in context.response_data
 
 

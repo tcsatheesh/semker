@@ -62,9 +62,20 @@ class ServerSettings:
     DEFAULT_DESCRIPTION: str = os.getenv("SERVER_DESCRIPTION", "Development server")
     
     # Processing settings
-    MESSAGE_PROCESSING_DELAY: float = float(os.getenv("MESSAGE_PROCESSING_DELAY", "2.0"))
+    MESSAGE_PROCESSING_DELAY: float = float(os.getenv("MESSAGE_PROCESSING_DELAY", "5.0"))
     MAX_MESSAGE_LENGTH: int = int(os.getenv("MAX_MESSAGE_LENGTH", "10000"))
     
     # Timeouts and limits
     REQUEST_TIMEOUT: int = int(os.getenv("REQUEST_TIMEOUT", "30"))
     MAX_CONNECTIONS: int = int(os.getenv("MAX_CONNECTIONS", "100"))
+    
+    # CORS settings
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+    CORS_ALLOW_CREDENTIALS: bool = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
+    CORS_ALLOW_METHODS: str = os.getenv("CORS_ALLOW_METHODS", "*")
+    CORS_ALLOW_HEADERS: str = os.getenv("CORS_ALLOW_HEADERS", "*")
+    
+    @classmethod
+    def get_cors_origins(cls) -> list[str]:
+        """Get CORS origins as a list"""
+        return [origin.strip() for origin in cls.CORS_ORIGINS.split(",") if origin.strip()]

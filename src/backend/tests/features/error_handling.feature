@@ -16,10 +16,6 @@ Feature: API Error Handling
     Then I should get a 404 error
     And the error message should indicate "Message with ID invalid-message-id not found"
 
-  Scenario: Submit message with missing content
-    When I submit an invalid message without content
-    Then I should get a 422 validation error
-
-  Scenario: Submit message with missing sender
-    When I submit an invalid message without sender
+  Scenario: Submit message with missing message
+    When I submit an invalid message without message
     Then I should get a 422 validation error

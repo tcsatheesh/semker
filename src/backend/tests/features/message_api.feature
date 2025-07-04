@@ -8,19 +8,19 @@ Feature: Message Processing API
     And the API is accessible at "http://localhost:8000"
 
   Scenario: Submit a message for processing
-    When I submit a message with content "Hello, Behave test!" from sender "behave_test"
+    When I submit a message with message "Hello, Behave test!"
     Then I should receive a message ID
     And the response status should be "received"
     And the response should include a timestamp
 
   Scenario: Get message status
-    Given I have submitted a message with content "Test message" from sender "test_user"
+    Given I have submitted a message with message "Test message"
     When I request the message status
     Then I should get the message details
     And the status should be either "received" or "processed"
 
   Scenario: Get processing updates
-    Given I have submitted a message with content "Update test message" from sender "update_test"
+    Given I have submitted a message with message "Update test message"
     When I request updates for the message
     Then I should get a list of updates
     And eventually the message should be processed

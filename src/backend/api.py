@@ -6,6 +6,7 @@ import os
 from typing import List, Dict, Any, Optional, Callable
 from fastapi import FastAPI, HTTPException, BackgroundTasks, status
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from models import Message, MessageResponse, UpdateResponse, HealthResponse
 from process import MessageProcessor
@@ -69,6 +70,15 @@ if telemetry_enabled and TelemetryMiddleware is not None and instrument_fastapi 
     app.add_middleware(TelemetryMiddleware)  # type: ignore[arg-type]
     instrument_fastapi(app)
 
+# Add CORS middleware to allow frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ServerSettings.get_cors_origins(),
+    allow_credentials=ServerSettings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=[ServerSettings.CORS_ALLOW_METHODS] if ServerSettings.CORS_ALLOW_METHODS != "*" else ["*"],
+    allow_headers=[ServerSettings.CORS_ALLOW_HEADERS] if ServerSettings.CORS_ALLOW_HEADERS != "*" else ["*"],
+)
+
 
 @app.post(Routes.MESSAGES, 
          response_model=MessageResponse,
@@ -81,7 +91,7 @@ async def receive_message(message: Message, background_tasks: BackgroundTasks) -
     response: MessageResponse = await message_processor.submit_message(message)
     
     # Start background processing
-    background_tasks.add_task(message_processor.process_message_async, response.message_id, message.content)
+    background_tasks.add_task(message_processor.process_message_async, response.message_id, message.message)
     
     return response
 
