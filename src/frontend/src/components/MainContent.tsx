@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { apiService } from '../services/apiService';
+import { apiService, getConversationId, generateNewConversationId } from '../services/apiService';
 
 interface Message {
   id: string;
@@ -28,6 +28,7 @@ const MainContent: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePolling, setActivePolling] = useState<Set<string>>(new Set());
+  const [conversationId, setConversationId] = useState<string>(getConversationId());
   const chatEndRef = useRef<HTMLDivElement>(null);
   const pollingIntervals = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
@@ -89,8 +90,8 @@ const MainContent: React.FC = () => {
     return `${(milliseconds / 1000).toFixed(1)}s`;
   };
 
-  const removeIntermediateMessages = (messageId: string) => {
-    // Don't remove intermediate messages - instead mark them as completed
+  const markIntermediateMessagesCompleted = (messageId: string) => {
+    // Don't remove intermediate messages - instead mark them as completed with smaller font
     setChatMessages(prev => prev.map(msg => 
       (msg.isIntermediate && msg.messageId === messageId) 
         ? { ...msg, isIntermediate: false, isCompleted: true }
@@ -135,19 +136,15 @@ const MainContent: React.FC = () => {
           };
 
           setChatMessages(prev => {
-            // Don't remove previous intermediate messages, just add this one
-            // Remove only the previous intermediate message with the same exact ID pattern
-            const filtered = prev.filter(msg => 
-              !(msg.isIntermediate && msg.messageId === messageId && msg.id.startsWith(`intermediate-${messageId}`))
-            );
-            return [...filtered, intermediateMessage];
+            // Add all intermediate messages to show full progress
+            return [...prev, intermediateMessage];
           });
 
           // If processing is complete, show final message and mark intermediate messages as completed
           if (latestUpdate.status === 'processed') {
             setTimeout(() => {
               // Mark intermediate messages as completed instead of removing them
-              removeIntermediateMessages(messageId);
+              markIntermediateMessagesCompleted(messageId);
               
               const finalMessage: ChatMessage = {
                 id: `final-${messageId}`,
@@ -197,6 +194,27 @@ const MainContent: React.FC = () => {
 
     // Initial poll
     poll();
+  };
+
+  const startNewConversation = () => {
+    // Generate new conversation ID
+    const newId = generateNewConversationId();
+    setConversationId(newId);
+    
+    // Clear chat messages
+    setChatMessages([]);
+    
+    // Clear any active polling
+    pollingIntervals.current.forEach((interval) => {
+      clearInterval(interval);
+    });
+    pollingIntervals.current.clear();
+    setActivePolling(new Set());
+    
+    // Clear any errors
+    setError(null);
+    
+    console.log('Started new conversation with ID:', newId);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -266,20 +284,34 @@ const MainContent: React.FC = () => {
       <div className="container">
         <div className="chat-container">
           <div className="chat-header">
-            <h1>Semantic Kernel Agentic AI Chat</h1>
-            <div className="connection-status">
-              <span className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
-                ●
-              </span>
-              <span className="status-text">
-                {isConnected ? 'Connected' : 'Disconnected'}
-              </span>
+            <div className="header-main">
+              <h1>Semantic Kernel Agentic AI Chat</h1>
+              <div className="conversation-info">
+                <small>Conversation ID: {conversationId.substring(0, 8)}...</small>
+              </div>
+            </div>
+            <div className="header-controls">
+              <div className="connection-status">
+                <span className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
+                  ●
+                </span>
+                <span className="status-text">
+                  {isConnected ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
               <button 
                 onClick={checkConnection}
                 className="button small"
                 style={{ marginLeft: '1rem' }}
               >
                 Reconnect
+              </button>
+              <button 
+                onClick={startNewConversation}
+                className="button small"
+                style={{ marginLeft: '0.5rem' }}
+              >
+                New Chat
               </button>
             </div>
           </div>

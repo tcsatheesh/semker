@@ -148,11 +148,29 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-.chat-header h1 {
+.header-main h1 {
   margin: 0;
   font-size: 1.5rem;
+}
+
+.conversation-info {
+  margin-top: 0.25rem;
+}
+
+.conversation-info small {
+  color: #888;
+  font-family: monospace;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .connection-status {
@@ -316,6 +334,7 @@ code {
 .chat-message.intermediate .message-text {
   font-style: italic;
   color: #6c757d;
+  font-size: 0.9em; /* Slightly smaller font for intermediate messages */
 }
 
 /* Completed intermediate message styles - smaller font size */

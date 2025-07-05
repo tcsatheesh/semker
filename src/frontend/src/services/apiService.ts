@@ -3,6 +3,27 @@ import axios from 'axios';
 // Base URL for the backend API
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+// Utility function to generate UUID v4
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
+// Generate and store conversation ID for this session
+let conversationId: string = generateUUID();
+
+// Function to get current conversation ID
+export const getConversationId = (): string => conversationId;
+
+// Function to generate a new conversation ID (for new chats)
+export const generateNewConversationId = (): string => {
+  conversationId = generateUUID();
+  return conversationId;
+};
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -83,7 +104,11 @@ export const apiService = {
   async createMessage(message: string): Promise<Message> {
     try {
       const payload: CreateMessageRequest = { message };
-      const response = await api.post<CreateMessageResponse>('/messages', payload);
+      const response = await api.post<CreateMessageResponse>('/messages', payload, {
+        headers: {
+          'x-ms-conversation-id': conversationId
+        }
+      });
       
       // Transform the response to match our Message interface
       return {

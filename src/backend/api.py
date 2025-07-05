@@ -4,7 +4,7 @@ Main FastAPI application for Semker Async Message Processing API
 
 import os
 from typing import List, Dict, Any, Optional, Callable
-from fastapi import FastAPI, HTTPException, BackgroundTasks, status
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -86,12 +86,25 @@ app.add_middleware(
          tags=[Tags.MESSAGES],
          summary=Summaries.SUBMIT_MESSAGE,
          description=Descriptions.SUBMIT_MESSAGE)
-async def receive_message(message: Message, background_tasks: BackgroundTasks) -> MessageResponse:
+async def receive_message(message: Message, background_tasks: BackgroundTasks, request: Request) -> MessageResponse:
     """Submit a message for asynchronous processing."""
+    # Extract conversation ID from header
+    thread_id = request.headers.get("x-ms-conversation-id", None)
+    if not thread_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Missing required header: x-ms-conversation-id"
+        )
+    
     response: MessageResponse = await message_processor.submit_message(message)
     
-    # Start background processing
-    background_tasks.add_task(message_processor.process_message_async, response.message_id, message.message)
+    # Start background processing with conversation ID
+    background_tasks.add_task(
+        message_processor.process_message_async, 
+        response.message_id, 
+        thread_id,
+        message.message,
+    )
     
     return response
 
