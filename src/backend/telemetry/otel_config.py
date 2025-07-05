@@ -20,7 +20,7 @@ from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME, SERVICE_VERSION, SERVICE_INSTANCE_ID
 import uuid
-from config.telemetry_config import telemetry_config
+from config.telemetry import telemetry_config
 
 # Use string literals for resource attributes since semconv module structure has changed
 SERVICE_NAMESPACE_KEY = "service.namespace"

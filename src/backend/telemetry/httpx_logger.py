@@ -5,7 +5,7 @@ import logging
 import httpx
 
 from typing import Dict, Any
-from config.telemetry_config import telemetry_config
+from config.telemetry import telemetry_config
 
 
 class JsonFormatter(logging.Formatter):

@@ -8,7 +8,7 @@ from fastapi import Request, Response
 from starlette.routing import Match
 from starlette.middleware.base import BaseHTTPMiddleware
 from .otel_config import semker_metrics, get_tracer, get_logger
-from config.telemetry_config import telemetry_config
+from config.telemetry import telemetry_config
 
 # Get tracer and logger instances
 tracer = get_tracer(telemetry_config.MIDDLEWARE_TRACER_NAME)
