@@ -1,0 +1,46 @@
+/* LogViewer Component Styles */
+
+.log-viewer {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+.log-viewer .search-bar {
+  margin-bottom: 20px;
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.log-viewer .log-entries {
+  max-height: 400px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.log-viewer .log-entry {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.log-viewer .log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-viewer .log-entry pre {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
