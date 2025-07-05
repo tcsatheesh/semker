@@ -18,6 +18,7 @@ from semantic_kernel.functions.kernel_arguments import KernelArguments
 
 from agents.base import BaseAgent
 from config.constants import MessageStatus
+from agents.config import Billing, Headers
 
 
 class BillingAgentResponse(BaseModel):
@@ -62,26 +63,10 @@ class BillingAgent(BaseAgent):
 
         super().__init__(  # type: ignore
             kernel=kernel,
-            name="Billing",
-            instructions=BillingAgent._get_template(),
+            name=Billing.AGENT_NAME,
+            instructions=Billing.AGENT_TEMPLATE,
             arguments=KernelArguments(settings=settings),
         )
-
-    @staticmethod
-    def _get_template() -> str:
-        """
-        Generate the instruction template for the LLM.
-        
-        Returns:
-            A string containing the system instructions for the billing agent
-        """
-        return """
-            You are the Billing Agent, responsible for managing billing-related tasks.
-            Your objective is to handle billing inquiries and provide accurate information.
-            Do not provide any personal or sensitive information.
-            If the billing data is not available, inform the user that you cannot access it.
-            Ensure that you follow the provided instructions carefully.
-        """
 
     async def process_message_async(
         self,
@@ -118,13 +103,10 @@ class BillingAgent(BaseAgent):
                       or processing the request
         """
         plugin = MCPStreamableHttpPlugin(
-            name="BillingPlugin",
-            description="A plugin for handling billing.",
-            url="http://localhost:8002/bill/mcp",
-            headers={
-                "x-ms-message-id": message_id,
-                "x-ms-conversation_id": thread_id,
-            },
+            name=Billing.PLUGIN_NAME,
+            description=Billing.PLUGIN_DESCRIPTION,
+            url=Billing.get_mcp_endpoint(),
+            headers=Headers.get_mcp_headers(message_id, thread_id),
         )
         await plugin.connect()
         self.kernel.add_plugin(plugin)

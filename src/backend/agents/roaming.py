@@ -18,6 +18,7 @@ from semantic_kernel.functions.kernel_arguments import KernelArguments
 
 from agents.base import BaseAgent
 from config.constants import MessageStatus
+from .config import Roaming, Headers
 
 
 class RoamingAgentResponse(BaseModel):
@@ -62,25 +63,10 @@ class RoamingAgent(BaseAgent):
 
         super().__init__(
             kernel=kernel,
-            name="Roaming",
-            instructions=RoamingAgent._get_template(),
+            name=Roaming.AGENT_NAME,
+            instructions=Roaming.AGENT_TEMPLATE,
             arguments=KernelArguments(settings=settings),
         )
-
-    @staticmethod
-    def _get_template() -> str:
-        """
-        Generate the instruction template for the LLM.
-        
-        Returns:
-            A string containing the system instructions for the roaming agent
-        """
-        return """
-            You are the Roaming Agent, responsible for managing roaming-related tasks.
-            Your objective is to handle roaming inquiries and provide accurate information.
-            Do not provide any personal or sensitive information.
-            Ensure that you follow the provided instructions carefully.
-        """
 
     async def process_message_async(
         self,
@@ -117,13 +103,10 @@ class RoamingAgent(BaseAgent):
                       or processing the request
         """
         plugin = MCPStreamableHttpPlugin(
-            name="RoamingPlugin",
-            description="A plugin for handling roaming.",
-            url="http://localhost:8002/roam/mcp",
-            headers={
-                "x-ms-message-id": message_id,
-                "x-ms-conversation_id": thread_id,
-            },
+            name=Roaming.PLUGIN_NAME,
+            description=Roaming.PLUGIN_DESCRIPTION,
+            url=Roaming.get_mcp_endpoint(),
+            headers=Headers.get_mcp_headers(message_id, thread_id),
         )
         await plugin.connect()
         self.kernel.add_plugin(plugin)

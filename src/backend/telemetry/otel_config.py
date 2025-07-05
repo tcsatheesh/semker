@@ -20,18 +20,19 @@ from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME, SERVICE_VERSION, SERVICE_INSTANCE_ID
 import uuid
+from config.telemetry_config import telemetry_config
 
 # Use string literals for resource attributes since semconv module structure has changed
 SERVICE_NAMESPACE_KEY = "service.namespace"
 DEPLOYMENT_ENVIRONMENT_KEY = "deployment.environment"
 
-# Service information
-SERVICE_NAME_VALUE = "semker-backend"
-SERVICE_VERSION_VALUE = "0.1.0"
+# Service information from config
+SERVICE_NAME_VALUE = telemetry_config.SERVICE_NAME
+SERVICE_VERSION_VALUE = telemetry_config.SERVICE_VERSION
 SERVICE_INSTANCE_ID_VALUE = str(uuid.uuid4())
 
 # Default OTLP endpoint for .NET Aspire Dashboard
-DEFAULT_OTLP_ENDPOINT = "http://localhost:4317"
+DEFAULT_OTLP_ENDPOINT = telemetry_config.DEFAULT_OTLP_ENDPOINT
 
 
 def get_resource() -> Resource:
@@ -40,7 +41,7 @@ def get_resource() -> Resource:
         SERVICE_NAME: SERVICE_NAME_VALUE,
         SERVICE_VERSION: SERVICE_VERSION_VALUE,
         SERVICE_INSTANCE_ID: SERVICE_INSTANCE_ID_VALUE,
-        SERVICE_NAMESPACE_KEY: "semker",
+        SERVICE_NAMESPACE_KEY: telemetry_config.SERVICE_NAMESPACE,
         DEPLOYMENT_ENVIRONMENT_KEY: os.getenv("ENVIRONMENT", "development"),
     })
 

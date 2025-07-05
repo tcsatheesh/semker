@@ -8,10 +8,11 @@ from fastapi import Request, Response
 from starlette.routing import Match
 from starlette.middleware.base import BaseHTTPMiddleware
 from .otel_config import semker_metrics, get_tracer, get_logger
+from config.telemetry_config import telemetry_config
 
 # Get tracer and logger instances
-tracer = get_tracer("semker.middleware")
-logger = get_logger("semker.middleware")
+tracer = get_tracer(telemetry_config.MIDDLEWARE_TRACER_NAME)
+logger = get_logger(telemetry_config.MIDDLEWARE_LOGGER_NAME)
 
 
 class TelemetryMiddleware(BaseHTTPMiddleware):
@@ -22,8 +23,8 @@ class TelemetryMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
         
         # Extract route information
-        route_path = "unknown"
-        endpoint_name = "unknown"
+        route_path = telemetry_config.UNKNOWN_ROUTE
+        endpoint_name = telemetry_config.UNKNOWN_ENDPOINT
         
         for route in request.app.routes:
             match, _ = route.matches({"type": "http", "path": request.url.path, "method": request.method})
@@ -40,9 +41,9 @@ class TelemetryMiddleware(BaseHTTPMiddleware):
                 "http.method": request.method,
                 "http.route": route_path,
                 "http.url": str(request.url),
-                "http.user_agent": request.headers.get("user-agent", ""),
+                "http.user_agent": request.headers.get(telemetry_config.USER_AGENT_HEADER, telemetry_config.DEFAULT_USER_AGENT),
                 "semker.endpoint": endpoint_name,
-                "semker.service": "backend",
+                "semker.service": telemetry_config.MIDDLEWARE_SERVICE_NAME,
             }
         ) as span:
             
@@ -61,7 +62,7 @@ class TelemetryMiddleware(BaseHTTPMiddleware):
                     "path": request.url.path,
                     "route": route_path,
                     "endpoint": endpoint_name,
-                    "user_agent": request.headers.get("user-agent", ""),
+                    "user_agent": request.headers.get(telemetry_config.USER_AGENT_HEADER, telemetry_config.DEFAULT_USER_AGENT),
                 }
             )
             

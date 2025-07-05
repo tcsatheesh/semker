@@ -1,6 +1,16 @@
 """Semantic Kernel utilities for Azure OpenAI integration.
 
-This module provides utilities for initializing and configuring Semantic Kernel
+This module prov            limits=httpx.Limits(
+                timeout=HttpClient.TIMEOUT_SECONDS,
+                connect=HttpClient.CONNECT_TIMEOUT_SECONDS,
+            ),
+            limits=httpx.Limits(
+                max_connections=HttpClient.MAX_CONNECTIONS,
+                max_keepalive_connections=HttpClient.MAX_KEEPALIVE_CONNECTIONS,
+            ),
+            headers={
+                HttpClient.MESSAGE_ID_HEADER: message_id,
+                HttpClient.CONVERSATION_ID_HEADER: thread_id,ies for initializing and configuring Semantic Kernel
 instances with Azure OpenAI services, including custom HTTP clients with telemetry
 and logging capabilities.
 
@@ -22,6 +32,7 @@ from telemetry.httpx_logger import (
     response_interceptor,
     error_interceptor,
 )
+from .config import HttpClient, Services
 
 if TYPE_CHECKING:
     from agents.planner import PlannerAgent
@@ -74,16 +85,16 @@ class KernelUtils:
         # 1. Create your custom httpx.AsyncClient
         _custom_httpx_client = httpx.AsyncClient(
             timeout=httpx.Timeout(
-                timeout=60.0,
-                connect=5.0,
+                timeout=HttpClient.TIMEOUT_SECONDS,
+                connect=HttpClient.CONNECT_TIMEOUT_SECONDS,
             ),
             limits=httpx.Limits(
-                max_connections=100,
-                max_keepalive_connections=20,
+                max_connections=HttpClient.MAX_CONNECTIONS,
+                max_keepalive_connections=HttpClient.MAX_KEEPALIVE_CONNECTIONS,
             ),
             headers={
-                "x-ms-message-id": message_id,
-                "x-ms-conversation_id": thread_id,
+                HttpClient.MESSAGE_ID_HEADER: message_id,
+                HttpClient.CONVERSATION_ID_HEADER: thread_id,
             },
             event_hooks={
                 "request": [request_interceptor],
@@ -95,7 +106,7 @@ class KernelUtils:
         _azure_openai_async_client = None
         if os.getenv("AZURE_OPENAI_API_KEY", None):
             _azure_openai_async_client = AsyncAzureOpenAI(
-                api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+                api_version=Services.AZURE_OPENAI_API_VERSION,
                 http_client=_custom_httpx_client,
             )
         else:
@@ -104,10 +115,10 @@ class KernelUtils:
             _azure_credential = DefaultAzureCredential()
             _token_provider = get_bearer_token_provider(
                 _azure_credential,
-                "https://cognitiveservices.azure.com/.default",
+                Services.AZURE_COGNITIVE_SERVICES_SCOPE,
             )
             _azure_openai_async_client = AsyncAzureOpenAI(
-                api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+                api_version=Services.AZURE_OPENAI_API_VERSION,
                 azure_ad_token_provider=_token_provider,
                 http_client=_custom_httpx_client,
             )

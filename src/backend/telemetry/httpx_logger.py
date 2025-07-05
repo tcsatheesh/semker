@@ -5,6 +5,7 @@ import logging
 import httpx
 
 from typing import Dict, Any
+from config.telemetry_config import telemetry_config
 
 
 class JsonFormatter(logging.Formatter):
@@ -19,8 +20,8 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(_log_record)
 
 
-_logger = logging.getLogger("openai.httpx")
-_file_handler = logging.FileHandler("httpx.jsonl")
+_logger = logging.getLogger(telemetry_config.HTTPX_LOGGER_NAME)
+_file_handler = logging.FileHandler(telemetry_config.HTTPX_LOG_FILE)
 _file_handler.setLevel(logging.INFO)
 _json_formatter = JsonFormatter()
 _file_handler.setFormatter(_json_formatter)
@@ -31,8 +32,8 @@ async def request_interceptor(request: httpx.Request) -> None:
     """
     An asynchronous function to intercept outgoing requests.
     """
-    if not request.headers.get("x-ms-request-id"):
-        request.headers["x-ms-request-id"] = str(uuid4())
+    if not request.headers.get(telemetry_config.REQUEST_ID_HEADER):
+        request.headers[telemetry_config.REQUEST_ID_HEADER] = str(uuid4())
 
 
 async def response_interceptor(response: httpx.Response) -> None:

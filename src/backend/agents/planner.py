@@ -17,6 +17,7 @@ from semantic_kernel.functions.kernel_arguments import KernelArguments
 
 from agents.base import BaseAgent
 from config.constants import MessageStatus
+from .config import Planner
 
 
 class PlannerAgentResponse(BaseModel):
@@ -63,32 +64,10 @@ class PlannerAgent(BaseAgent):
 
         super().__init__(
             kernel=kernel,
-            name="Planner",
-            instructions=PlannerAgent._get_template(),
+            name=Planner.AGENT_NAME,
+            instructions=Planner.get_agent_template(),
             arguments=KernelArguments(settings=settings),
         )
-
-    @staticmethod
-    def _get_template() -> str:
-        """
-        Generate the instruction template for the LLM.
-        
-        Returns:
-            A string containing the system instructions for the planner agent
-        """
-        return """
-            You are the Planner Agent, responsible for planning tasks.
-            You have access to the following agents:
-            - Billing: Handles billing-related tasks.
-            - Roaming: Manages roaming-related inquiries.
-            - Broadband: Manages broadband-support-related inquiries.
-            - Ticketing: Handles raising tickets tasks.
-            Select one of the agents based on the user message.
-            If you are unable to determine the appropriate agent, respond with a message indicating that you cannot assist.
-            Your objective is to provide a clear and concise response to the user.
-            Do not provide any personal or sensitive information.
-            Ensure that you follow the provided instructions carefully.
-        """
 
     async def process_message_async(
         self,
