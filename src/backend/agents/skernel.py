@@ -1,12 +1,21 @@
+"""Semantic Kernel utilities for Azure OpenAI integration.
+
+This module provides utilities for initializing and configuring Semantic Kernel
+instances with Azure OpenAI services, including custom HTTP clients with telemetry
+and logging capabilities.
+
+Classes:
+    KernelUtils: Utility class for creating and managing Semantic Kernel instances.
+"""
+
 import os
 import httpx
+from typing import TYPE_CHECKING
 
 from openai import AsyncAzureOpenAI
 
 from semantic_kernel import Kernel
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
-
-from models.schemas import Message
 
 from telemetry.httpx_logger import (
     request_interceptor,
@@ -14,14 +23,32 @@ from telemetry.httpx_logger import (
     error_interceptor,
 )
 
+if TYPE_CHECKING:
+    from agents.planner import PlannerAgent
+
 
 class KernelUtils:
+    """Utility class for creating and managing Semantic Kernel instances.
+    
+    This class provides functionality to initialize Semantic Kernel instances
+    with Azure OpenAI services, including custom HTTP clients with telemetry
+    and logging capabilities.
+    
+    Attributes:
+        kernel (Kernel): The initialized Semantic Kernel instance.
+    """
 
     def __init__(
         self,
         message_id: str,
         thread_id: str,
-    ):
+    ) -> None:
+        """Initialize KernelUtils with message and thread identifiers.
+        
+        Args:
+            message_id: Unique identifier for the message.
+            thread_id: Unique identifier for the conversation thread.
+        """
         self.kernel = self._init_kernel(
             message_id=message_id,
             thread_id=thread_id,
@@ -31,7 +58,19 @@ class KernelUtils:
         self,
         message_id: str,
         thread_id: str,
-    ):
+    ) -> Kernel:
+        """Initialize a Semantic Kernel instance with Azure OpenAI integration.
+        
+        Creates a custom HTTP client with telemetry hooks and configures
+        the kernel with Azure OpenAI chat completion services.
+        
+        Args:
+            message_id: Unique identifier for the message.
+            thread_id: Unique identifier for the conversation thread.
+            
+        Returns:
+            Kernel: Configured Semantic Kernel instance.
+        """
         # 1. Create your custom httpx.AsyncClient
         _custom_httpx_client = httpx.AsyncClient(
             timeout=httpx.Timeout(
@@ -68,7 +107,14 @@ class KernelUtils:
 
     def get_agent(
         self,
-    ):
+    ) -> "PlannerAgent":
+        """Create and return a PlannerAgent instance.
+        
+        Initializes a PlannerAgent with the configured Semantic Kernel instance.
+        
+        Returns:
+            PlannerAgent: Configured planner agent instance.
+        """
         _kernel = self.kernel
 
         from agents.planner import PlannerAgent
