@@ -18,6 +18,7 @@ interface ChatMessage {
   isLoading?: boolean;
   duration?: number; // Duration in milliseconds
   isIntermediate?: boolean; // For polling responses that will disappear
+  isCompleted?: boolean; // For intermediate messages that are now completed
   messageId?: string; // Backend message ID for tracking
 }
 
@@ -89,8 +90,11 @@ const MainContent: React.FC = () => {
   };
 
   const removeIntermediateMessages = (messageId: string) => {
-    setChatMessages(prev => prev.filter(msg => 
-      !(msg.isIntermediate && msg.messageId === messageId)
+    // Don't remove intermediate messages - instead mark them as completed
+    setChatMessages(prev => prev.map(msg => 
+      (msg.isIntermediate && msg.messageId === messageId) 
+        ? { ...msg, isIntermediate: false, isCompleted: true }
+        : msg
     ));
   };
 
@@ -131,16 +135,18 @@ const MainContent: React.FC = () => {
           };
 
           setChatMessages(prev => {
-            // Remove previous intermediate messages for this messageId
+            // Don't remove previous intermediate messages, just add this one
+            // Remove only the previous intermediate message with the same exact ID pattern
             const filtered = prev.filter(msg => 
-              !(msg.isIntermediate && msg.messageId === messageId)
+              !(msg.isIntermediate && msg.messageId === messageId && msg.id.startsWith(`intermediate-${messageId}`))
             );
             return [...filtered, intermediateMessage];
           });
 
-          // If processing is complete, show final message and stop polling
+          // If processing is complete, show final message and mark intermediate messages as completed
           if (latestUpdate.status === 'processed') {
             setTimeout(() => {
+              // Mark intermediate messages as completed instead of removing them
               removeIntermediateMessages(messageId);
               
               const finalMessage: ChatMessage = {
@@ -289,7 +295,7 @@ const MainContent: React.FC = () => {
               chatMessages.map((message) => (
                 <div 
                   key={message.id} 
-                  className={`chat-message ${message.isUser ? 'user' : 'server'} ${message.isLoading ? 'loading' : ''} ${message.isIntermediate ? 'intermediate' : ''}`}
+                  className={`chat-message ${message.isUser ? 'user' : 'server'} ${message.isLoading ? 'loading' : ''} ${message.isIntermediate ? 'intermediate' : ''} ${message.isCompleted ? 'completed' : ''}`}
                 >
                   <div className="message-content">
                     <div className="message-text">

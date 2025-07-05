@@ -318,6 +318,27 @@ code {
   color: #6c757d;
 }
 
+/* Completed intermediate message styles - smaller font size */
+.chat-message.completed {
+  opacity: 0.6;
+  animation: none;
+}
+
+.chat-message.completed .message-content {
+  border-left: 3px solid #28a745;
+  padding-left: 0.5rem;
+}
+
+.chat-message.completed .message-text {
+  font-style: italic;
+  color: #6c757d;
+  font-size: 0.85em; /* Smaller font size */
+}
+
+.chat-message.completed .message-meta {
+  font-size: 0.8em; /* Smaller meta text too */
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 0.8; }
   50% { opacity: 1; }
