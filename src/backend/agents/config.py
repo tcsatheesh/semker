@@ -96,6 +96,30 @@ class Billing:
     """
 
 
+class Tariff:
+    """Tariff agent-specific configuration settings."""
+    
+    # Agent identity
+    AGENT_NAME: Final[str] = "Tariff"
+    PLUGIN_NAME: Final[str] = "TariffPlugin"
+    PLUGIN_DESCRIPTION: Final[str] = "A plugin for handling tariffs."
+    
+    # Service endpoint
+    @classmethod
+    def get_mcp_endpoint(cls) -> str:
+        """Get the MCP endpoint for tariffs service."""
+        return f"{Services.BILLING_SERVICE_BASE_URL}/tariff/mcp"
+    
+    # Agent template
+    AGENT_TEMPLATE: Final[str] = """
+        You are the Tariff Agent, responsible for managing tariff-related tasks.
+        Your objective is to handle tariff inquiries and provide accurate information.
+        Do not provide any personal or sensitive information.
+        If the tariff data is not available, inform the user that you cannot access it.
+        Ensure that you follow the provided instructions carefully.
+    """
+
+
 class Planner:
     """Planner agent-specific configuration settings."""
     
@@ -105,7 +129,8 @@ class Planner:
     # Available agents for routing
     AVAILABLE_AGENTS: Final[List[str]] = [
         "Billing: Handles billing-related tasks.",
-        "Roaming: Manages roaming-related inquiries.", 
+        "Roaming: Manages roaming-related inquiries.",
+        "Tariff: Handles tariff-related inquiries.",
         "Broadband: Manages broadband-support-related inquiries.",
         "Ticketing: Handles raising tickets tasks."
     ]

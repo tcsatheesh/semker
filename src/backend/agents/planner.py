@@ -126,6 +126,10 @@ class PlannerAgent(BaseAgent):
             from agents.roaming import RoamingAgent
 
             _agent = RoamingAgent(kernel=self.kernel)
+        elif _result.agent_name == "Tariff":
+            from agents.tariff import TariffAgent
+
+            _agent = TariffAgent(kernel=self.kernel)
 
         if _agent:
             _thread = cast(

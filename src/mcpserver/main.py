@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor # type: ignore[import-untyped]
 
 from telemetry import set_up_logging
-from tools import billing, broadband, roaming, ticket
+from tools import billing, broadband, roaming, ticket, tariff
 
 set_up_logging()
 
@@ -36,6 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with contextlib.AsyncExitStack() as stack:
         await stack.enter_async_context(billing.mcp.session_manager.run())
         await stack.enter_async_context(roaming.mcp.session_manager.run())
+        await stack.enter_async_context(tariff.mcp.session_manager.run())
         await stack.enter_async_context(broadband.mcp.session_manager.run())
         await stack.enter_async_context(ticket.mcp.session_manager.run())
         yield
@@ -47,5 +48,6 @@ FastAPIInstrumentor.instrument_app(app)
 
 app.mount("/bill", billing.mcp.streamable_http_app())
 app.mount("/roam", roaming.mcp.streamable_http_app())
+app.mount("/tariff", tariff.mcp.streamable_http_app())
 app.mount("/broadband", broadband.mcp.streamable_http_app())
 app.mount("/ticket", ticket.mcp.streamable_http_app())
