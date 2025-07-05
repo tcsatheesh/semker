@@ -1,16 +1,11 @@
-"""
-Step definitions for the Semker API BDD tests
-"""
-
-"""
-Step definitions for the Semker API BDD tests
-"""
+"""Step definitions for the Semker API BDD tests."""
 
 import time
-import requests
-from typing import Any, Dict, List
-from behave import given, when, then  # type: ignore
 from datetime import datetime
+from typing import Any, Dict, List
+
+import requests
+from behave import given, when, then  # type: ignore
 
 
 # Base URL for the API

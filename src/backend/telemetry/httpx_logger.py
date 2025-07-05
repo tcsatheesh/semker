@@ -4,6 +4,8 @@ import json
 import logging
 import httpx
 
+from typing import Dict, Any
+
 
 class JsonFormatter(logging.Formatter):
     def format(
@@ -25,7 +27,7 @@ _file_handler.setFormatter(_json_formatter)
 _logger.addHandler(_file_handler)
 
 
-async def request_interceptor(request: httpx.Request):
+async def request_interceptor(request: httpx.Request) -> None:
     """
     An asynchronous function to intercept outgoing requests.
     """
@@ -33,7 +35,7 @@ async def request_interceptor(request: httpx.Request):
         request.headers["x-ms-request-id"] = str(uuid4())
 
 
-async def response_interceptor(response: httpx.Response):
+async def response_interceptor(response: httpx.Response) -> None:
     """
     An asynchronous function to intercept incoming responses.
     """
@@ -51,7 +53,7 @@ async def response_interceptor(response: httpx.Response):
 
     _request_body = response.request.content.decode("utf-8")
     _response_body = cloned_response.decode("utf-8") if cloned_response else None
-    _rr = {
+    _rr: Dict[str, Dict[str,Any ]] = {
         "Request": {
             "Method": response.request.method,
             "URL": str(response.request.url),
@@ -67,7 +69,7 @@ async def response_interceptor(response: httpx.Response):
     _logger.info(json.dumps(_rr))
 
 
-async def error_interceptor(request: httpx.Request, exc: httpx.RequestError):
+async def error_interceptor(request: httpx.Request, exc: httpx.RequestError) -> None:
     """
     An asynchronous function to intercept errors during requests.
     """
