@@ -599,30 +599,65 @@ code {
   font-style: italic;
 }
 
+/* Enhanced Table Styling for Markdown */
+.chat-message .message-text .markdown-table,
 .chat-message .message-text table {
   border-collapse: collapse;
-  margin: 0.25rem 0;
+  margin: 0.5rem 0;
   width: 100%;
   font-size: 0.9em;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.chat-message .message-text .markdown-th,
+.chat-message .message-text .markdown-td,
 .chat-message .message-text th,
 .chat-message .message-text td {
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 0.75rem;
   text-align: left;
+  vertical-align: top;
 }
 
+.chat-message.user .message-text .markdown-th,
+.chat-message.user .message-text .markdown-td,
 .chat-message.user .message-text th,
 .chat-message.user .message-text td {
   border-color: rgba(255, 255, 255, 0.3);
 }
 
+.chat-message .message-text .markdown-th,
 .chat-message .message-text th {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.08);
   font-weight: bold;
+  color: #2c3e50;
 }
 
+.chat-message.user .message-text .markdown-th,
 .chat-message.user .message-text th {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.chat-message .message-text .markdown-tr:nth-child(even) .markdown-td,
+.chat-message .message-text tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.chat-message.user .message-text .markdown-tr:nth-child(even) .markdown-td,
+.chat-message.user .message-text tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Table hover effects */
+.chat-message .message-text .markdown-tr:hover .markdown-td,
+.chat-message .message-text tr:hover td {
+  background: rgba(0, 123, 255, 0.05);
+}
+
+.chat-message.user .message-text .markdown-tr:hover .markdown-td,
+.chat-message.user .message-text tr:hover td {
   background: rgba(255, 255, 255, 0.1);
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { apiService, getConversationId, generateNewConversationId } from '../services/apiService';
 
 interface Message {
@@ -300,7 +301,6 @@ const MainContent: React.FC = () => {
     try {
       // Send message to server and track duration
       const response = await apiService.createMessage(userMessage.text);
-      const requestDuration = Date.now() - startTime;
       
       // Remove loading message
       setChatMessages(prev => prev.filter(msg => !msg.isLoading));
@@ -378,7 +378,31 @@ const MainContent: React.FC = () => {
                       ) : message.isUser ? (
                         message.text
                       ) : (
-                        <ReactMarkdown>{message.text}</ReactMarkdown>
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            table: ({node, ...props}) => (
+                              <table className="markdown-table" {...props} />
+                            ),
+                            th: ({node, ...props}) => (
+                              <th className="markdown-th" {...props} />
+                            ),
+                            td: ({node, ...props}) => (
+                              <td className="markdown-td" {...props} />
+                            ),
+                            tr: ({node, ...props}) => (
+                              <tr className="markdown-tr" {...props} />
+                            ),
+                            thead: ({node, ...props}) => (
+                              <thead className="markdown-thead" {...props} />
+                            ),
+                            tbody: ({node, ...props}) => (
+                              <tbody className="markdown-tbody" {...props} />
+                            )
+                          }}
+                        >
+                          {message.text}
+                        </ReactMarkdown>
                       )}
                     </div>
                     <div className="message-meta">
