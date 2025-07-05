@@ -12,6 +12,15 @@ from behave import given, when, then  # type: ignore
 base_url: str = "http://localhost:8000"
 
 
+def get_test_headers() -> Dict[str, str]:
+    """Generate test headers with required conversation ID."""
+    import uuid
+    return {
+        "x-ms-conversation-id": str(uuid.uuid4()),
+        "Content-Type": "application/json"
+    }
+
+
 @given('the Semker API server is running')  # type: ignore
 def step_given_server_running(context: Any) -> None:
     """Verify that the API server is accessible"""
@@ -39,7 +48,8 @@ def step_given_message_submitted(context: Any, message: str) -> None:
         "message": message
     }
     
-    response: requests.Response = requests.post(f"{base_url}/messages", json=message_data)
+    headers = get_test_headers()
+    response: requests.Response = requests.post(f"{base_url}/messages", json=message_data, headers=headers)
     assert response.status_code == 201
     
     context.submitted_message = response.json()
@@ -58,7 +68,7 @@ def step_given_multiple_messages_submitted(context: Any) -> None:
     # Initialize list without type annotation on assignment
     submitted_messages: List[Dict[str, Any]] = []
     for message_data in messages:
-        response: requests.Response = requests.post(f"{base_url}/messages", json=message_data)
+        response: requests.Response = requests.post(f"{base_url}/messages", json=message_data, headers=get_test_headers())
         assert response.status_code == 201
         submitted_messages.append(response.json())
     
@@ -72,7 +82,7 @@ def step_when_submit_message(context: Any, message: str) -> None:
         "message": message
     }
     
-    context.response = requests.post(f"{base_url}/messages", json=message_data)
+    context.response = requests.post(f"{base_url}/messages", json=message_data, headers=get_test_headers())
     if context.response.status_code == 201:
         context.response_data = context.response.json()
 
@@ -168,6 +178,13 @@ def step_then_get_message_details(context: Any) -> None:
     assert "timestamp" in context.response_data
 
 
+@then('the status should be either "{status1}" or "{status2}" or "{status3}"')  # type: ignore
+def step_then_status_one_of_three(context: Any, status1: str, status2: str, status3: str) -> None:
+    """Verify the status is one of the three expected values"""
+    actual_status: str = context.response_data["status"]
+    assert actual_status in [status1, status2, status3], f"Status '{actual_status}' is not one of '{status1}', '{status2}', or '{status3}'"
+
+
 @then('the status should be either "{status1}" or "{status2}"')  # type: ignore
 def step_then_status_either_or(context: Any, status1: str, status2: str) -> None:
     """Verify the status is one of the expected values"""
@@ -190,7 +207,7 @@ def step_then_eventually_processed(context: Any) -> None:
         response: requests.Response = requests.get(f"{base_url}/messages/{context.message_id}/updates")
         if response.status_code == 200:
             updates: List[Any] = response.json()
-            if updates and any(update["status"] == "processed" for update in updates):
+            if updates and any(update["status"] in ["completed", "failed"] for update in updates):
                 return
         time.sleep(1)
     

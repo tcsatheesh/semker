@@ -17,7 +17,7 @@ Feature: Message Processing API
     Given I have submitted a message with message "Test message"
     When I request the message status
     Then I should get the message details
-    And the status should be either "received" or "processed"
+    And the status should be either "received" or "inprogress" or "completed"
 
   Scenario: Get processing updates
     Given I have submitted a message with message "Update test message"
