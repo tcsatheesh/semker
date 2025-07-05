@@ -91,10 +91,26 @@ class KernelUtils:
                 "error": [error_interceptor],
             },
         )
-        _azure_openai_async_client = AsyncAzureOpenAI(
-            api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-            http_client=_custom_httpx_client,
-        )
+
+        _azure_openai_async_client = None
+        if os.getenv("AZURE_OPENAI_API_KEY", None):
+            _azure_openai_async_client = AsyncAzureOpenAI(
+                api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+                http_client=_custom_httpx_client,
+            )
+        else:
+            from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+
+            _azure_credential = DefaultAzureCredential()
+            _token_provider = get_bearer_token_provider(
+                _azure_credential,
+                "https://cognitiveservices.azure.com/.default",
+            )
+            _azure_openai_async_client = AsyncAzureOpenAI(
+                api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+                azure_ad_token_provider=_token_provider,
+                http_client=_custom_httpx_client,
+            )
 
         _kernel = Kernel()
 
