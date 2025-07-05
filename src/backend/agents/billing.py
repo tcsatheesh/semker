@@ -1,5 +1,5 @@
-import os
 import json
+from typing import Callable
 from pydantic import BaseModel
 
 from semantic_kernel import Kernel
@@ -8,10 +8,9 @@ from semantic_kernel.connectors.mcp import MCPStreamableHttpPlugin
 from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 
-
 from agents.base import BaseAgent
 
-from models.schemas import Message
+from config.constants import MessageStatus
 
 
 class BillingAgentResponse(BaseModel):
@@ -31,7 +30,7 @@ class BillingAgent(BaseAgent):
         settings.response_format = BillingAgentResponse
         settings.temperature = 0.0
 
-        super().__init__(
+        super().__init__( # type: ignore
             kernel=kernel,
             name="Billing",
             instructions=BillingAgent._get_template(),
@@ -55,7 +54,7 @@ class BillingAgent(BaseAgent):
         message_id: str,
         thread_id: str,
         thread: ChatHistoryAgentThread,
-        on_intermediate_response,
+        on_intermediate_response: Callable[..., None],
     ) -> tuple[str, AgentThread, str]:
         plugin = MCPStreamableHttpPlugin(
             name="BillingPlugin",
@@ -76,11 +75,12 @@ class BillingAgent(BaseAgent):
 
         on_intermediate_response(
             message_id=message_id,
-            status="billing response recieved",
-            result="Billing response processed successfully.",
+            status=MessageStatus.IN_PROGRESS,
+            result="Billing Agent response received.",
+            agent_name=self.name,
         )
 
-        _result = BillingAgentResponse.model_validate(
+        _result: BillingAgentResponse = BillingAgentResponse.model_validate(
             json.loads(_response.message.content),
         )
 

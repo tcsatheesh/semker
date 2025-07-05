@@ -20,6 +20,7 @@ interface ChatMessage {
   isIntermediate?: boolean; // For polling responses that will disappear
   isCompleted?: boolean; // For intermediate messages that are now completed
   messageId?: string; // Backend message ID for tracking
+  agentName?: string; // Name of the agent that processed the message
 }
 
 const MainContent: React.FC = () => {
@@ -77,7 +78,10 @@ const MainContent: React.FC = () => {
         isUser: false,
         status: msg.status
       }));
-      setChatMessages(chatMsgs);
+      
+      // Filter out any messages with empty text to prevent empty completed messages
+      const validMessages = chatMsgs.filter(msg => msg.text && msg.text.trim());
+      setChatMessages(validMessages);
     } catch (err) {
       console.error('Error loading messages:', err);
     }
@@ -92,17 +96,28 @@ const MainContent: React.FC = () => {
 
   const markIntermediateMessagesCompleted = (messageId: string) => {
     // Don't remove intermediate messages - instead mark them as completed with smaller font
-    setChatMessages(prev => prev.map(msg => 
-      (msg.isIntermediate && msg.messageId === messageId) 
-        ? { ...msg, isIntermediate: false, isCompleted: true }
-        : msg
-    ));
+    setChatMessages(prev => {
+      const hasIntermediateMessages = prev.some(msg => msg.isIntermediate && msg.messageId === messageId);
+      
+      // Only modify messages if there are actually intermediate messages to complete
+      if (!hasIntermediateMessages) {
+        return prev;
+      }
+      
+      return prev.map(msg => 
+        (msg.isIntermediate && msg.messageId === messageId) 
+          ? { ...msg, isIntermediate: false, isCompleted: true }
+          : msg
+      );
+    });
   };
 
   const startPolling = async (messageId: string, startTime: number) => {
     if (activePolling.has(messageId)) return;
 
     setActivePolling(prev => new Set(prev).add(messageId));
+    let lastStatus = '';
+    let lastResult = '';
 
     const poll = async () => {
       try {
@@ -113,50 +128,87 @@ const MainContent: React.FC = () => {
         if (updates && updates.length > 0) {
           const latestUpdate = updates[updates.length - 1];
           
-          // Create appropriate message text based on status
-          let messageText = '';
-          if (latestUpdate.status === 'received') {
-            messageText = `✅ Message received and queued for processing...`;
-          } else if (latestUpdate.status === 'processing') {
-            messageText = `⚡ Processing your message...`;
-          } else {
-            messageText = `Processing... Status: ${latestUpdate.status}`;
-          }
+          // Check if status or result has changed from the last poll
+          const statusChanged = latestUpdate.status !== lastStatus;
+          const resultChanged = latestUpdate.result !== lastResult;
           
-          // Add intermediate status message
-          const intermediateMessage: ChatMessage = {
-            id: `intermediate-${messageId}-${Date.now()}`,
-            text: messageText,
-            timestamp: new Date(),
-            isUser: false,
-            status: latestUpdate.status,
-            duration,
-            isIntermediate: true,
-            messageId
-          };
+          if (statusChanged || resultChanged) {
+            // Update our tracking variables
+            lastStatus = latestUpdate.status;
+            lastResult = latestUpdate.result;
+            
+            // Only add intermediate message if not in a completion state
+            // Completion states will be handled by the final message logic below
+            if (latestUpdate.status !== 'completed' && latestUpdate.status !== 'failed') {
+              // Only create intermediate message if there's actual result content
+              if (latestUpdate.result && latestUpdate.result.trim()) {
+                // Create appropriate message text based on status
+                let messageText = '';
+                if (latestUpdate.status === 'received') {
+                  messageText = `✅ ${latestUpdate.result}`;
+                } else if (latestUpdate.status === 'inprogress') {
+                  messageText = `⚡ ${latestUpdate.result}`;
+                } else {
+                  messageText = `${latestUpdate.result}`;
+                }
+                
+                // Add intermediate status message
+                const intermediateMessage: ChatMessage = {
+                  id: `intermediate-${messageId}-${Date.now()}`,
+                  text: messageText,
+                  timestamp: new Date(),
+                  isUser: false,
+                  status: latestUpdate.status,
+                  duration,
+                  isIntermediate: true,
+                  messageId,
+                  agentName: latestUpdate.agent_name
+                };
 
-          setChatMessages(prev => {
-            // Add all intermediate messages to show full progress
-            return [...prev, intermediateMessage];
-          });
+                setChatMessages(prev => {
+                  // Add new intermediate message to show progress
+                  return [...prev, intermediateMessage];
+                });
+              }
+            }
+          } else {
+            // Only duration has changed, update the most recent intermediate message for this messageId
+            setChatMessages(prev => prev.map(msg => {
+              if (msg.isIntermediate && msg.messageId === messageId) {
+                // Find the most recent intermediate message and update its duration
+                const intermediateMessages = prev.filter(m => m.isIntermediate && m.messageId === messageId);
+                if (intermediateMessages.length > 0) {
+                  const mostRecent = intermediateMessages[intermediateMessages.length - 1];
+                  if (msg.id === mostRecent.id) {
+                    return { ...msg, duration };
+                  }
+                }
+              }
+              return msg;
+            }));
+          }
 
           // If processing is complete, show final message and mark intermediate messages as completed
-          if (latestUpdate.status === 'processed') {
+          if (latestUpdate.status === 'completed' || latestUpdate.status === 'failed') {
             setTimeout(() => {
               // Mark intermediate messages as completed instead of removing them
               markIntermediateMessagesCompleted(messageId);
               
-              const finalMessage: ChatMessage = {
-                id: `final-${messageId}`,
-                text: `✅ ${latestUpdate.result || ''}`,
-                timestamp: new Date(latestUpdate.processed_at),
-                isUser: false,
-                status: 'processed',
-                duration,
-                messageId
-              };
+              // Only create final message if there's actual result content
+              if (latestUpdate.result && latestUpdate.result.trim()) {
+                const finalMessage: ChatMessage = {
+                  id: `final-${messageId}`,
+                  text: `✅ ${latestUpdate.result}`,
+                  timestamp: new Date(latestUpdate.processed_at),
+                  isUser: false,
+                  status: `${latestUpdate.status || ''}`,
+                  duration,
+                  messageId,
+                  agentName: latestUpdate.agent_name
+                };
 
-              setChatMessages(prev => [...prev, finalMessage]);
+                setChatMessages(prev => [...prev, finalMessage]);
+              }
             }, 500); // Small delay to show the intermediate message briefly
 
             // Stop polling
@@ -253,20 +305,6 @@ const MainContent: React.FC = () => {
       // Remove loading message
       setChatMessages(prev => prev.filter(msg => !msg.isLoading));
 
-      // Show initial "received" status as an intermediate message
-      const receivedMessage: ChatMessage = {
-        id: `intermediate-${response.id}-received`,
-        text: `✅ Message received and queued for processing... (${formatDuration(requestDuration)})`,
-        timestamp: new Date(response.timestamp),
-        isUser: false,
-        status: response.status,
-        duration: requestDuration,
-        isIntermediate: true,
-        messageId: response.id
-      };
-
-      setChatMessages(prev => [...prev, receivedMessage]);
-
       // Start polling for processing updates
       startPolling(response.id, startTime);
 
@@ -287,7 +325,7 @@ const MainContent: React.FC = () => {
             <div className="header-main">
               <h1>Semantic Kernel Agentic AI Chat</h1>
               <div className="conversation-info">
-                <small>Conversation ID: {conversationId.substring(0, 8)}...</small>
+                <small>Conversation ID: {conversationId}</small>
               </div>
             </div>
             <div className="header-controls">
@@ -347,6 +385,11 @@ const MainContent: React.FC = () => {
                       <span className="message-time">
                         {message.timestamp.toLocaleTimeString()}
                       </span>
+                      {message.agentName && (
+                        <span className="message-agent">
+                          {message.agentName}
+                        </span>
+                      )}
                       {message.duration && (
                         <span className="message-duration">
                           {formatDuration(message.duration)}

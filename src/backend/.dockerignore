@@ -76,3 +76,5 @@ docker-compose*.yml
 *.bak
 *.backup
 *.old
+
+httpx.jsonl

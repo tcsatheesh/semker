@@ -1,6 +1,5 @@
 import json
-from typing import cast
-
+from typing import cast, Callable
 
 from pydantic import BaseModel
 
@@ -10,9 +9,7 @@ from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettin
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 
 from agents.base import BaseAgent
-
-
-from models.schemas import Message
+from config.constants import MessageStatus
 
 
 class PlannerAgentResponse(BaseModel):
@@ -62,7 +59,7 @@ class PlannerAgent(BaseAgent):
         message_id: str,
         thread_id: str,
         thread: ChatHistoryAgentThread,
-        on_intermediate_response,
+        on_intermediate_response: Callable[..., None],
     ) -> tuple[str, AgentThread, str]:
 
         _response = await self.get_response(
@@ -76,8 +73,9 @@ class PlannerAgent(BaseAgent):
 
         on_intermediate_response(
             message_id=message_id,
-            status="Planner response recieved",
-            result="Planner response processed successfully.",
+            status=MessageStatus.IN_PROGRESS,
+            result="Planner agent response received.",
+            agent_name=self.name,
         )
 
         _agent = None
@@ -95,6 +93,12 @@ class PlannerAgent(BaseAgent):
                 ChatHistoryAgentThread,
                 _response.thread,
             )
+            on_intermediate_response(
+            message_id=message_id,
+            status=MessageStatus.IN_PROGRESS,
+            result=_result.reply,
+            agent_name=self.name,
+        )
             _inner_response, _inner_thread, _agent_name = await _agent.process_message_async(
                 message=message,
                 message_id=message_id,

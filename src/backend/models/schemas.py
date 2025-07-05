@@ -41,6 +41,7 @@ class UpdateResponse(BaseModel):
     status: str = Field(description="Processing status")
     processed_at: datetime = Field(description="Timestamp when processing completed")
     result: Optional[str] = Field(None, description="Processing result or summary")
+    agent_name: Optional[str] = Field(None, description="Name of the agent that processed the message")
 
     class Config:
         json_schema_extra = {

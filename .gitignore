@@ -41,3 +41,5 @@ yarn-error.log*
 *.temp
 tmp/
 temp/
+
+httpx.jsonl

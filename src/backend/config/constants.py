@@ -76,8 +76,8 @@ class MessageStatus:
     """Message processing status constants"""
     
     RECEIVED: Final[str] = "received"
-    PROCESSING: Final[str] = "processing" 
-    PROCESSED: Final[str] = "processed"
+    IN_PROGRESS: Final[str] = "inprogress" 
+    COMPLETED: Final[str] = "completed"
     FAILED: Final[str] = "failed"
     CANCELLED: Final[str] = "cancelled"
 

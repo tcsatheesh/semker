@@ -1,5 +1,5 @@
-import os
 import json
+from typing import Callable
 from pydantic import BaseModel
 
 from semantic_kernel import Kernel
@@ -8,10 +8,8 @@ from semantic_kernel.connectors.mcp import MCPStreamableHttpPlugin
 from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 
-
 from agents.base import BaseAgent
-from models.schemas import Message
-
+from config.constants import MessageStatus
 
 class RoamingAgentResponse(BaseModel):
     reply: str
@@ -52,7 +50,7 @@ class RoamingAgent(BaseAgent):
         message_id: str,
         thread_id: str,
         thread: ChatHistoryAgentThread,
-        on_intermediate_response,
+        on_intermediate_response: Callable[..., None],
     ) -> tuple[str, AgentThread, str]:
         plugin = MCPStreamableHttpPlugin(
             name="RoamingPlugin",
@@ -69,6 +67,13 @@ class RoamingAgent(BaseAgent):
         _response = await self.get_response(
             messages=message,
             thread=thread,
+        )
+
+        on_intermediate_response(
+            message_id=message_id,
+            status=MessageStatus.IN_PROGRESS,
+            result="Roaming agent response received.",
+            agent_name=self.name,
         )
 
         _result = RoamingAgentResponse.model_validate(

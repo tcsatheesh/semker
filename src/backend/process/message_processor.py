@@ -11,6 +11,9 @@ from models import Message, MessageResponse, UpdateResponse, HealthResponse
 from config.settings import ServerSettings
 from config.constants import MessageStatus
 
+from semantic_kernel.agents import ChatHistoryAgentThread
+from agents.skernel import KernelUtils
+
 threads = {}
 
 
@@ -59,6 +62,7 @@ class MessageProcessor:
         message_id: str,
         status: MessageStatus,
         result: str,
+        agent_name: str,
     ) -> None:
         """
         Handle intermediate response updates during message processing.
@@ -76,6 +80,7 @@ class MessageProcessor:
             status=status,
             processed_at=datetime.now(),
             result=result,
+            agent_name=agent_name,
         )
         self.updates_store[message_id].append(update)
 
@@ -94,56 +99,60 @@ class MessageProcessor:
         """
         # Set initial processing status
         if message_id in self.messages_store:
-            self.messages_store[message_id]["status"] = MessageStatus.PROCESSING
+            self.messages_store[message_id]["status"] = MessageStatus.IN_PROGRESS
 
             # Store intermediate update
             processing_update = UpdateResponse(
                 message_id=message_id,
-                status=MessageStatus.PROCESSING,
+                status=MessageStatus.RECEIVED,
                 processed_at=datetime.now(),
-                result="Message is being processed...",
+                result="Message received and sent to the agent.",
+                agent_name=None,  # Agent name will be set later
             )
 
             if message_id not in self.updates_store:
                 self.updates_store[message_id] = []
             self.updates_store[message_id].append(processing_update)
 
-        # Simulate processing time
-        # await asyncio.sleep(ServerSettings.MESSAGE_PROCESSING_DELAY)
-
-        from semantic_kernel.agents import ChatHistoryAgentThread
 
         thread = threads.get(thread_id, ChatHistoryAgentThread())
-
-        from agents.skernel import KernelUtils
 
         _kernel_utils = KernelUtils(
             message_id=message_id,
             thread_id=thread_id,
         )
         _agent = _kernel_utils.get_agent()
-        _response, thread, agent_name = await _agent.process_message_async(
-            message=message_content,
-            message_id=message_id,
-            thread_id=thread_id,  # Assuming thread_id is not used in this context
-            thread=thread,  # Assuming thread is not used in this context
-            on_intermediate_response=self._on_intermediate_response,  # Assuming no intermediate response handler
-        )
+        _response = None
+        _status = None
+        _agent_name = None
+        try:
+            _response, thread, _agent_name = await _agent.process_message_async(
+                message=message_content,
+                message_id=message_id,
+                thread_id=thread_id,
+                thread=thread,
+                on_intermediate_response=self._on_intermediate_response,
+            )
+            _status = MessageStatus.COMPLETED
+            _response = _response
+        except Exception as e:
+            _status = MessageStatus.FAILED
+            _response = str(e)
 
         threads[thread_id] = thread
         # Update to final processed status
         if message_id in self.messages_store:
-            self.messages_store[message_id]["status"] = MessageStatus.PROCESSED
+            self.messages_store[message_id]["status"] = _status
             self.messages_store[message_id]["processed_at"] = datetime.now()
 
             # Store the final update
             final_update = UpdateResponse(
                 message_id=message_id,
-                status=MessageStatus.PROCESSED,
+                status=_status,
                 processed_at=datetime.now(),
                 result=_response,
+                agent_name=_agent_name,
             )
-
             self.updates_store[message_id].append(final_update)
 
     def get_message_updates(self, message_id: str) -> List[UpdateResponse]:
