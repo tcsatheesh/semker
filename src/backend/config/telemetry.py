@@ -24,6 +24,7 @@ class TelemetryConfig:
     
     # HTTPX logger configuration
     HTTPX_LOGGER_NAME: str = "openai.httpx"
+    HTTPX_LOG_FOLDER: str = "logs"
     HTTPX_LOG_FILE: str = "httpx.jsonl"
     
     # Request tracking headers

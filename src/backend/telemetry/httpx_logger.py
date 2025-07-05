@@ -1,3 +1,4 @@
+import os
 from uuid import uuid4
 from datetime import datetime, timezone
 import json
@@ -20,8 +21,16 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(_log_record)
 
 
+_log_file_path = (
+    f"{telemetry_config.HTTPX_LOG_FOLDER}/{telemetry_config.HTTPX_LOG_FILE}"
+)
+if not os.path.exists(telemetry_config.HTTPX_LOG_FOLDER):
+    os.makedirs(
+        telemetry_config.HTTPX_LOG_FOLDER,
+        exist_ok=True,
+    )
 _logger = logging.getLogger(telemetry_config.HTTPX_LOGGER_NAME)
-_file_handler = logging.FileHandler(telemetry_config.HTTPX_LOG_FILE)
+_file_handler = logging.FileHandler(_log_file_path)
 _file_handler.setLevel(logging.INFO)
 _json_formatter = JsonFormatter()
 _file_handler.setFormatter(_json_formatter)
@@ -54,7 +63,7 @@ async def response_interceptor(response: httpx.Response) -> None:
 
     _request_body = response.request.content.decode("utf-8")
     _response_body = cloned_response.decode("utf-8") if cloned_response else None
-    _rr: Dict[str, Dict[str,Any ]] = {
+    _rr: Dict[str, Dict[str, Any]] = {
         "Request": {
             "Method": response.request.method,
             "URL": str(response.request.url),

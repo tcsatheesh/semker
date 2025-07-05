@@ -95,24 +95,6 @@ const MainContent: React.FC = () => {
     return `${(milliseconds / 1000).toFixed(1)}s`;
   };
 
-  const markIntermediateMessagesCompleted = (messageId: string) => {
-    // Don't remove intermediate messages - instead mark them as completed with smaller font
-    setChatMessages(prev => {
-      const hasIntermediateMessages = prev.some(msg => msg.isIntermediate && msg.messageId === messageId);
-      
-      // Only modify messages if there are actually intermediate messages to complete
-      if (!hasIntermediateMessages) {
-        return prev;
-      }
-      
-      return prev.map(msg => 
-        (msg.isIntermediate && msg.messageId === messageId) 
-          ? { ...msg, isIntermediate: false, isCompleted: true }
-          : msg
-      );
-    });
-  };
-
   const startPolling = async (messageId: string, startTime: number) => {
     if (activePolling.has(messageId)) return;
 
@@ -167,8 +149,31 @@ const MainContent: React.FC = () => {
                 };
 
                 setChatMessages(prev => {
-                  // Add new intermediate message to show progress
-                  return [...prev, intermediateMessage];
+                  // Check if we already have this exact intermediate message content
+                  const hasSameContent = prev.some(msg => 
+                    msg.isIntermediate && 
+                    msg.messageId === messageId && 
+                    msg.text === messageText
+                  );
+                  
+                  // Only add if we don't already have the same content
+                  if (!hasSameContent) {
+                    return [...prev, intermediateMessage];
+                  }
+                  
+                  // If same content exists, just update the duration of the most recent one
+                  return prev.map(msg => {
+                    if (msg.isIntermediate && msg.messageId === messageId && msg.text === messageText) {
+                      const intermediateMessages = prev.filter(m => 
+                        m.isIntermediate && m.messageId === messageId && m.text === messageText
+                      );
+                      const mostRecent = intermediateMessages[intermediateMessages.length - 1];
+                      if (msg.id === mostRecent.id) {
+                        return { ...msg, duration };
+                      }
+                    }
+                    return msg;
+                  });
                 });
               }
             }
@@ -192,24 +197,40 @@ const MainContent: React.FC = () => {
           // If processing is complete, show final message and mark intermediate messages as completed
           if (latestUpdate.status === 'completed' || latestUpdate.status === 'failed') {
             setTimeout(() => {
-              // Mark intermediate messages as completed instead of removing them
-              markIntermediateMessagesCompleted(messageId);
-              
-              // Only create final message if there's actual result content
-              if (latestUpdate.result && latestUpdate.result.trim()) {
-                const finalMessage: ChatMessage = {
-                  id: `final-${messageId}`,
-                  text: `✅ ${latestUpdate.result}`,
-                  timestamp: new Date(latestUpdate.processed_at),
-                  isUser: false,
-                  status: `${latestUpdate.status || ''}`,
-                  duration,
-                  messageId,
-                  agentName: latestUpdate.agent_name
-                };
-
-                setChatMessages(prev => [...prev, finalMessage]);
-              }
+              setChatMessages(prev => {
+                // Check if we already have a final message for this messageId
+                const hasFinalMessage = prev.some(msg => 
+                  msg.messageId === messageId && 
+                  !msg.isIntermediate && 
+                  !msg.isCompleted &&
+                  msg.id.startsWith('final-')
+                );
+                
+                // Mark intermediate messages as completed
+                const updatedMessages = prev.map(msg => 
+                  (msg.isIntermediate && msg.messageId === messageId) 
+                    ? { ...msg, isIntermediate: false, isCompleted: true }
+                    : msg
+                );
+                
+                // Only create final message if there's actual result content and no final message exists
+                if (latestUpdate.result && latestUpdate.result.trim() && !hasFinalMessage) {
+                  const finalMessage: ChatMessage = {
+                    id: `final-${messageId}`,
+                    text: `✅ ${latestUpdate.result}`,
+                    timestamp: new Date(latestUpdate.processed_at),
+                    isUser: false,
+                    status: `${latestUpdate.status || ''}`,
+                    duration,
+                    messageId,
+                    agentName: latestUpdate.agent_name
+                  };
+                  
+                  return [...updatedMessages, finalMessage];
+                }
+                
+                return updatedMessages;
+              });
             }, 500); // Small delay to show the intermediate message briefly
 
             // Stop polling
