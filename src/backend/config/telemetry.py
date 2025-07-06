@@ -47,7 +47,7 @@ class TelemetryConfig:
     DEFAULT_OTLP_ENDPOINT: str = "http://localhost:4317"
 
     SERVICE_NAME_VALUE: str = "semantic-kernel"
-    LOG_FILTER_NAME: str = "semantic_kernel"
+    # LOG_FILTER_NAME: str = "semantic_kernel"
 
 
 # Instantiate configuration object
