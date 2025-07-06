@@ -139,7 +139,7 @@ class PlannerAgent(BaseAgent):
             on_intermediate_response(
                 message_id=message_id,
                 status=MessageStatus.IN_PROGRESS,
-                result=_result.reply,
+                result=f"Planner agent routing to {_result.agent_name} agent.",
                 agent_name=self.name,
             )
             _inner_response, _inner_thread, _agent_name = await _agent.process_message_async(
