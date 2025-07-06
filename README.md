@@ -271,6 +271,8 @@ semker/
 │   │   ├── README.md           # MCP server documentation
 │   │   ├── main.py             # FastAPI MCP application
 │   │   ├── dev_server.py       # Development server script
+│   │   ├── pyproject.toml      # Python project configuration
+│   │   ├── uv.lock             # UV dependency lock file
 │   │   ├── tools/              # AI tool implementations
 │   │   │   ├── billing/        # Billing management tools
 │   │   │   ├── roaming/        # Roaming service tools
@@ -281,12 +283,17 @@ semker/
 │   ├── backend/                # Main FastAPI backend
 │   │   ├── README.md           # Backend documentation
 │   │   ├── api.py              # Main API application
+│   │   ├── pyproject.toml      # Python project configuration
+│   │   ├── uv.lock             # UV dependency lock file
+│   │   ├── .env.example        # Environment configuration template
+│   │   ├── agents/             # AI agent implementations
 │   │   ├── models/             # Pydantic data models
 │   │   ├── process/            # Message processing logic
 │   │   ├── config/             # Configuration and settings
 │   │   ├── telemetry/          # Observability and logging
 │   │   ├── tests/              # BDD test suite
-│   │   └── logs/               # Application log files
+│   │   ├── logs/               # Application log files
+│   │   └── utils/              # Utility functions
 │   ├── frontend/               # React TypeScript frontend
 │   │   ├── README.md           # Frontend documentation
 │   │   ├── src/                # React components and services
@@ -302,8 +309,6 @@ semker/
 
 ## Configuration
 
-## Configuration
-
 ### Port Configuration
 - **MCP Server**: 8002 (AI customer service tools)
 - **Backend API**: 8000 (message processing)
@@ -313,34 +318,49 @@ semker/
 
 ### Environment Variables
 
-#### MCP Server (.env in src/mcpserver/)
+#### MCP Server (Environment Variables)
+The MCP Server uses the same telemetry configuration as the backend:
 ```bash
-# Server settings
+# Server settings (configured in scripts/start-mcpserver.sh)
 PORT=8002
 HOST=0.0.0.0
 
-# OpenTelemetry settings
+# OpenTelemetry settings (inherited from backend)
 OTLP_ENDPOINT=http://localhost:4317
 TELEMETRY_ENABLED=true
 ```
 
 #### Backend (.env in src/backend/)
 ```bash
-# CORS settings
-CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-CORS_ALLOW_CREDENTIALS=true
+# Enable/disable telemetry
+TELEMETRY_ENABLED=true
 
-# Processing settings
-MESSAGE_PROCESSING_DELAY=2.0
-
-# Logging
-LOG_LEVEL=INFO
-LOG_FOLDER=logs
-MAX_LOG_SIZE_MB=10
-
-# Telemetry (optional)
-TELEMETRY_ENABLED=false
+# OpenTelemetry Collector endpoint (for .NET Aspire Dashboard)
 OTLP_ENDPOINT=http://localhost:4317
+
+# Enable console output for debugging (optional)
+TELEMETRY_CONSOLE=false
+
+# Service configuration
+HOST=0.0.0.0
+PORT=8000
+RELOAD=true
+LOG_LEVEL=info
+
+# Environment
+ENVIRONMENT=development
+
+# CORS Configuration
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://your-production-domain.com
+CORS_ALLOW_CREDENTIALS=true
+CORS_ALLOW_METHODS=*
+CORS_ALLOW_HEADERS=*
+
+# Azure OpenAI Configuration (for AI features)
+AZURE_OPENAI_ENDPOINT=< your-azure-openai-endpoint >
+AZURE_OPENAI_API_VERSION=2024-10-21
+AZURE_OPENAI_API_KEY=< your-azure-openai-api-key >
+AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=< your-azure-openai-chat-deployment-name >
 ```
 
 #### Frontend (.env in src/frontend/)
