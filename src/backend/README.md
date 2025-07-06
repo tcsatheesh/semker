@@ -151,6 +151,49 @@ LOG_LEVEL=INFO
 TELEMETRY_ENABLED=false
 TELEMETRY_SERVICE_NAME=semker-backend
 TELEMETRY_SERVICE_VERSION=1.0.0
+
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FOLDER=logs
+MAX_LOG_SIZE_MB=10
+LOG_BACKUP_COUNT=5
+```
+
+### Logging
+
+The backend uses file-based logging with automatic rotation to avoid console clutter and enable persistent log storage.
+
+#### Features
+- **File Rotation**: Automatic log rotation when files exceed 10MB
+- **Separate Error Logs**: Dedicated error log file for easy troubleshooting
+- **Structured Format**: Timestamped logs with logger names and levels
+- **Configurable Levels**: DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+#### Log Files
+- **Main Log**: `logs/semker-backend.log` - All log messages
+- **Error Log**: `logs/semker-backend_errors.log` - Only ERROR and above
+
+#### Usage in Code
+```python
+# Simple initialization
+from telemetry.otel_config import init_backend_logging
+
+logger = init_backend_logging('INFO')
+logger.info('Application started')
+logger.error('Something went wrong')
+
+# Advanced configuration
+from telemetry.otel_config import configure_telemetry, get_logger
+
+configure_telemetry(log_level='DEBUG')
+logger = get_logger('my.module')
+logger.debug('Detailed debugging information')
+```
+
+#### Log Format
+```
+2025-07-06 11:44:18 - semker-backend - INFO - Application started
+2025-07-06 11:44:19 - my.module - ERROR - Error message with context
 ```
 
 ### Server Settings

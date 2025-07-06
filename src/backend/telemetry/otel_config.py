@@ -3,7 +3,9 @@ OpenTelemetry configuration for Semker backend integration with .NET Aspire Dash
 """
 
 import logging
+import logging.handlers
 import os
+from pathlib import Path
 from typing import Optional, Any
 from opentelemetry import trace, metrics, _logs
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -35,6 +37,60 @@ SERVICE_INSTANCE_ID_VALUE = str(uuid.uuid4())
 DEFAULT_OTLP_ENDPOINT = telemetry_config.DEFAULT_OTLP_ENDPOINT
 
 
+def setup_file_logging(log_level: str = "INFO") -> None:
+    """
+    Set up file logging for the backend service.
+    
+    Args:
+        log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    """
+    # Create logs directory if it doesn't exist
+    logs_dir = Path(telemetry_config.LOG_FOLDER)
+    logs_dir.mkdir(exist_ok=True)
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, log_level.upper()))
+    
+    # Remove any existing handlers to avoid duplicates
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    # Create file handler with rotation
+    log_file = logs_dir / f"{SERVICE_NAME_VALUE}.log"
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_file,
+        maxBytes=telemetry_config.MAX_LOG_SIZE_MB * 1024 * 1024,
+        backupCount=telemetry_config.LOG_BACKUP_COUNT,
+        encoding='utf-8'
+    )
+    
+    # Create formatter
+    formatter = logging.Formatter(
+        fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler.setFormatter(formatter)
+    
+    # Add handler to root logger
+    root_logger.addHandler(file_handler)
+    
+    # Also set up a separate file for errors
+    error_log_file = logs_dir / f"{SERVICE_NAME_VALUE}_errors.log"
+    error_handler = logging.handlers.RotatingFileHandler(
+        error_log_file,
+        maxBytes=telemetry_config.MAX_LOG_SIZE_MB * 1024 * 1024,
+        backupCount=telemetry_config.LOG_BACKUP_COUNT,
+        encoding='utf-8'
+    )
+    error_handler.setLevel(logging.ERROR)
+    error_handler.setFormatter(formatter)
+    root_logger.addHandler(error_handler)
+    
+    print(f"📝 File logging configured: {log_file}")
+    print(f"🚨 Error logging configured: {error_log_file}")
+
+
 def get_resource() -> Resource:
     """Create OpenTelemetry resource with service information."""
     return Resource.create({
@@ -51,7 +107,8 @@ def configure_telemetry(
     enable_console: bool = False,
     enable_metrics: bool = True,
     enable_logging: bool = True,
-    enable_tracing: bool = True
+    enable_tracing: bool = True,
+    log_level: str = "INFO"
 ) -> None:
     """
     Configure OpenTelemetry for the Semker backend.
@@ -62,9 +119,13 @@ def configure_telemetry(
         enable_metrics: Enable metrics collection
         enable_logging: Enable logging collection
         enable_tracing: Enable tracing collection
+        log_level: File logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     """
     if otlp_endpoint is None:
         otlp_endpoint = os.getenv("OTLP_ENDPOINT", DEFAULT_OTLP_ENDPOINT)
+    
+    # Set up file logging first
+    setup_file_logging(log_level)
     
     resource = get_resource()
     
@@ -170,17 +231,24 @@ def get_meter(name: Optional[str] = None) -> metrics.Meter:
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
-    Get a logger instance configured with OpenTelemetry.
+    Get a logger instance configured with OpenTelemetry and file logging.
     
     Args:
         name: Logger name (defaults to service name)
         
     Returns:
-        Python Logger instance
+        Python Logger instance configured for file output
     """
     if name is None:
         name = SERVICE_NAME_VALUE
-    return logging.getLogger(name)
+    
+    logger = logging.getLogger(name)
+    
+    # Ensure logger doesn't propagate to avoid duplicate logs
+    if name != SERVICE_NAME_VALUE:
+        logger.propagate = True
+    
+    return logger
 
 
 # Custom metrics for Semker backend
@@ -254,3 +322,23 @@ class SemkerMetrics:
 
 # Global metrics instance
 semker_metrics = SemkerMetrics()
+
+
+# Convenience function for easy backend logging setup
+def init_backend_logging(log_level: str = "INFO") -> logging.Logger:
+    """
+    Initialize complete logging setup for the backend and return a logger.
+    
+    This is a convenience function that:
+    1. Sets up file logging with rotation
+    2. Configures OpenTelemetry
+    3. Returns a configured logger
+    
+    Args:
+        log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        
+    Returns:
+        Configured logger instance
+    """
+    configure_telemetry(log_level=log_level)
+    return get_logger()

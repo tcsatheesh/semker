@@ -27,6 +27,12 @@ class TelemetryConfig:
     HTTPX_LOG_FOLDER: str = "logs"
     HTTPX_LOG_FILE: str = "httpx.jsonl"
     
+    # General logging configuration
+    LOG_FOLDER: str = "logs"
+    LOG_LEVEL: str = "INFO"
+    MAX_LOG_SIZE_MB: int = 10
+    LOG_BACKUP_COUNT: int = 5
+    
     # Request tracking headers
     REQUEST_ID_HEADER: str = "x-ms-request-id"
     USER_AGENT_HEADER: str = "user-agent"
