@@ -6,7 +6,7 @@ set -e
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Navigate to the backend directory (parent of scripts)
-BACKEND_DIR="$(dirname "$SCRIPT_DIR")"
+BACKEND_DIR="$(dirname "$SCRIPT_DIR")/src/backend"
 
 echo "🔭 Starting Semker backend with .NET Aspire Dashboard integration"
 

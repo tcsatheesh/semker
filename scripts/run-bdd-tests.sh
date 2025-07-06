@@ -7,7 +7,7 @@ echo "================================"
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Navigate to the backend directory (parent of scripts)
-BACKEND_DIR="$(dirname "$SCRIPT_DIR")"
+BACKEND_DIR="$(dirname "$SCRIPT_DIR")/src/backend"
 
 # Ensure we're in the backend directory
 cd "$BACKEND_DIR"
