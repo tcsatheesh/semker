@@ -103,6 +103,8 @@ class FileMetricExporter(MetricExporter):
     """Custom metric exporter that writes OpenTelemetry metrics to a file."""
     
     def __init__(self, file_path: Path):
+        # Initialize parent class
+        super().__init__()  # type: ignore
         self.file_path = file_path
         
     def export(self, metrics_data: Any, timeout_millis: float = 30000, **kwargs: Any) -> MetricExportResult:
@@ -308,7 +310,7 @@ def set_up_metrics() -> None:
 setup_file_logging(telemetry_config.LOG_LEVEL)
 set_up_logging()
 set_up_tracing()
-# set_up_metrics()
+set_up_metrics()
     
 print("✅ Telemetry initialization complete")
 
