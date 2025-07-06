@@ -30,7 +30,7 @@ class HttpClient:
     
     # Header names
     MESSAGE_ID_HEADER: Final[str] = "x-ms-message-id"
-    CONVERSATION_ID_HEADER: Final[str] = "x-ms-conversation_id"
+    CONVERSATION_ID_HEADER: Final[str] = "x-ms-conversation-id"
 
 
 class Services:
