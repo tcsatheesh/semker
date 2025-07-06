@@ -10,6 +10,7 @@ import contextlib
 from collections.abc import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
@@ -17,17 +18,6 @@ from telemetry import set_up_logging
 from tools import billing, broadband, roaming, ticket, tariff
 
 set_up_logging()
-
-
-class ApiInfo(BaseModel):
-    """Response model for API information."""
-    name: str
-    version: str
-    description: str
-    tools: list[str]
-    documentation: str
-    redoc: str
-    openapi: str
 
 
 class HealthStatus(BaseModel):
@@ -158,30 +148,16 @@ app.mount(
     name="ticket"
 )
 
-# Add a root endpoint for API information
-@app.get("/", tags=["root"], response_model=ApiInfo)
-async def root() -> ApiInfo:
+# Add a root endpoint that redirects to docs
+@app.get("/", tags=["root"])
+async def root() -> RedirectResponse:
     """
-    Root endpoint providing API information and available tools.
+    Root endpoint that redirects to the interactive API documentation.
     
     Returns:
-        ApiInfo: API information including version, available tools, and documentation links
+        RedirectResponse: Redirect to the Swagger UI documentation
     """
-    return ApiInfo(
-        name="Semantic Kernel MCP Server",
-        version="1.0.0",
-        description="Model Context Protocol server for telecommunications and customer service",
-        tools=[
-            "billing - Customer billing and invoice management",
-            "roaming - International roaming charges by country",
-            "tariff - Tariff plans and pricing structures", 
-            "broadband - Router troubleshooting guidance",
-            "ticket - Support ticket management"
-        ],
-        documentation="/docs",
-        redoc="/redoc",
-        openapi="/openapi.json"
-    )
+    return RedirectResponse(url="/docs")
 
 # Add health check endpoint
 @app.get("/health", tags=["monitoring"], response_model=HealthStatus)
