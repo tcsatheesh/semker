@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './LogViewer.css';
 
 type LogEntry = {
@@ -226,9 +228,22 @@ const LogViewer: React.FC<LogViewerProps> = ({ darkMode }) => {
                 </div>
                 <div className="card-body p-0">
                   <div className="details-content">
-                    <pre className="json-content">
+                    <SyntaxHighlighter
+                      language="json"
+                      style={darkMode ? vscDarkPlus : vs}
+                      customStyle={{
+                        margin: 0,
+                        padding: '1.5rem',
+                        background: 'var(--bg-primary)',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-color)',
+                        fontSize: '0.9rem',
+                        lineHeight: '1.4'
+                      }}
+                      wrapLongLines={true}
+                    >
                       {JSON.stringify(sanitizeRequest(selectedLog.message?.Request) || {}, null, 2)}
-                    </pre>
+                    </SyntaxHighlighter>
                   </div>
                 </div>
               </div>
@@ -242,9 +257,22 @@ const LogViewer: React.FC<LogViewerProps> = ({ darkMode }) => {
                 </div>
                 <div className="card-body p-0">
                   <div className="details-content">
-                    <pre className="json-content">
+                    <SyntaxHighlighter
+                      language="json"
+                      style={darkMode ? vscDarkPlus : vs}
+                      customStyle={{
+                        margin: 0,
+                        padding: '1.5rem',
+                        background: 'var(--bg-primary)',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-color)',
+                        fontSize: '0.9rem',
+                        lineHeight: '1.4'
+                      }}
+                      wrapLongLines={true}
+                    >
                       {JSON.stringify(selectedLog.message?.Response || {}, null, 2)}
-                    </pre>
+                    </SyntaxHighlighter>
                   </div>
                 </div>
               </div>
