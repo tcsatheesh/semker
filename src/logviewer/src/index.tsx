@@ -15,7 +15,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Apply theme to document
-    document.documentElement.setAttribute('data-bs-theme', darkMode ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     document.body.className = darkMode ? 'bg-dark text-light' : 'bg-light text-dark';
     
     // Save to localStorage
