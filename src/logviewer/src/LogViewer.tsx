@@ -11,7 +11,11 @@ interface ConversationGroup {
   isExpanded: boolean;
 }
 
-const LogViewer: React.FC = () => {
+interface LogViewerProps {
+  darkMode: boolean;
+}
+
+const LogViewer: React.FC<LogViewerProps> = ({ darkMode }) => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [conversationGroups, setConversationGroups] = useState<ConversationGroup[]>([]);
@@ -113,61 +117,76 @@ const LogViewer: React.FC = () => {
   };
 
   return (
-    <div className="log-viewer">
+    <div className={`log-viewer ${darkMode ? 'theme-dark' : 'theme-light'}`}>
       <div className="log-controls">
-        <input
-          type="text"
-          placeholder="Search logs..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-bar"
-        />
+        <div className="input-group">
+          <span className="input-group-text">
+            <i className="bi bi-search"></i>
+          </span>
+          <input
+            type="text"
+            placeholder="Search logs by conversation ID, method, status..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-control search-bar"
+          />
+        </div>
       </div>
 
       <div className="log-layout">
         {/* Left Column - Conversation Tree */}
-        <div className="conversation-panel">
-          <h3>Conversations</h3>
-          <div className="conversation-tree">
-            {conversationGroups.map((group) => (
-              <div key={group.conversationId} className="conversation-group">
-                <div 
-                  className="conversation-header"
-                  onClick={() => toggleConversation(group.conversationId)}
-                >
-                  <span className={`expand-icon ${group.isExpanded ? 'expanded' : ''}`}>
-                    ▶
-                  </span>
-                  <span className="conversation-id">
-                    {group.conversationId.startsWith('ungrouped-') 
-                      ? 'No Conversation ID' 
-                      : group.conversationId.substring(0, 8) + '...'}
-                  </span>
-                  <span className="message-count">
-                    ({group.messages.length})
-                  </span>
-                </div>
-                
-                {group.isExpanded && (
-                  <div className="conversation-messages">
-                    {group.messages.map((log, index) => (
-                      <div 
-                        key={`${group.conversationId}-${index}`} 
-                        className={`log-entry-tree ${selectedLog === log ? 'selected' : ''}`}
-                        onClick={() => handleLogClick(log)}
-                      >
-                        <div className="log-timestamp">
-                          {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : 'No time'}
-                        </div>
-                        <div className="log-summary">
-                          {log.message?.Request?.Method || 'Unknown'} - {log.message?.Response?.['Status Code'] || 'No response'}
-                        </div>
-                      </div>
-                    ))}
+        <div className="conversation-panel card">
+          <div className="card-header">
+            <h3 className="mb-0">
+              <i className="bi bi-diagram-3-fill me-2"></i>
+              Conversations
+            </h3>
+          </div>
+          <div className="card-body p-0">
+            <div className="conversation-tree">
+              {conversationGroups.map((group) => (
+                <div key={group.conversationId} className="conversation-group">
+                  <div 
+                    className="conversation-header"
+                    onClick={() => toggleConversation(group.conversationId)}
+                  >
+                    <span className={`expand-icon ${group.isExpanded ? 'expanded' : ''}`}>
+                      <i className={`bi ${group.isExpanded ? 'bi-chevron-down' : 'bi-chevron-right'}`}></i>
+                    </span>
+                    <span className="conversation-id">
+                      <i className="bi bi-chat-dots me-2"></i>
+                      {group.conversationId.startsWith('ungrouped-') 
+                        ? 'No Conversation ID' 
+                        : group.conversationId.substring(0, 8) + '...'}
+                    </span>
+                    <span className="message-count badge">
+                      {group.messages.length}
+                    </span>
                   </div>
-                )}
-              </div>
-            ))}
+                  
+                  {group.isExpanded && (
+                    <div className="conversation-messages">
+                      {group.messages.map((log, index) => (
+                        <div 
+                          key={`${group.conversationId}-${index}`} 
+                          className={`log-entry-tree ${selectedLog === log ? 'selected' : ''}`}
+                          onClick={() => handleLogClick(log)}
+                        >
+                          <div className="log-timestamp">
+                            <i className="bi bi-clock me-1"></i>
+                            {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : 'No time'}
+                          </div>
+                          <div className="log-summary">
+                            <i className="bi bi-arrow-left-right me-1"></i>
+                            {log.message?.Request?.Method || 'Unknown'} - {log.message?.Response?.['Status Code'] || 'No response'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -175,27 +194,44 @@ const LogViewer: React.FC = () => {
         <div className="details-panel">
           {selectedLog ? (
             <>
-              <div className="request-panel">
-                <h3>Request</h3>
-                <div className="details-content">
-                  <pre className="json-content">
-                    {JSON.stringify(selectedLog.message?.Request || {}, null, 2)}
-                  </pre>
+              <div className="request-panel card">
+                <div className="card-header">
+                  <h3 className="mb-0">
+                    <i className="bi bi-arrow-up-circle-fill me-2"></i>
+                    Request
+                  </h3>
+                </div>
+                <div className="card-body p-0">
+                  <div className="details-content">
+                    <pre className="json-content">
+                      {JSON.stringify(selectedLog.message?.Request || {}, null, 2)}
+                    </pre>
+                  </div>
                 </div>
               </div>
               
-              <div className="response-panel">
-                <h3>Response</h3>
-                <div className="details-content">
-                  <pre className="json-content">
-                    {JSON.stringify(selectedLog.message?.Response || {}, null, 2)}
-                  </pre>
+              <div className="response-panel card">
+                <div className="card-header">
+                  <h3 className="mb-0">
+                    <i className="bi bi-arrow-down-circle-fill me-2"></i>
+                    Response
+                  </h3>
+                </div>
+                <div className="card-body p-0">
+                  <div className="details-content">
+                    <pre className="json-content">
+                      {JSON.stringify(selectedLog.message?.Response || {}, null, 2)}
+                    </pre>
+                  </div>
                 </div>
               </div>
             </>
           ) : (
             <div className="no-selection">
-              <p>Select a log entry to view request and response details</p>
+              <div className="text-center">
+                <i className="bi bi-cursor-fill display-4 mb-3 text-muted"></i>
+                <p className="mb-0">Select a log entry to view request and response details</p>
+              </div>
             </div>
           )}
         </div>
