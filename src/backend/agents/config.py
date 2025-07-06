@@ -92,6 +92,7 @@ class Billing:
         Your objective is to handle billing inquiries and provide accurate information.
         Do not provide any personal or sensitive information.
         If the billing data is not available, inform the user that you cannot access it.
+        Use a tabular format to present billing information clearly.
         Ensure that you follow the provided instructions carefully.
     """
 

@@ -2,8 +2,9 @@
 Main FastAPI application for Semker Async Message Processing API
 """
 
-import os
-from typing import List, Dict, Any, Optional, Callable
+from telemetry import instrument_fastapi
+
+from typing import List, Dict, Any
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,32 +15,6 @@ from config import (
     APISettings, ContactSettings, LicenseSettings, ServerSettings,
     Routes, Tags, Summaries, Descriptions
 )
-
-# Initialize telemetry if enabled
-telemetry_enabled = os.getenv("TELEMETRY_ENABLED", "true").lower() == "true"
-
-# Import telemetry modules if enabled
-TelemetryMiddleware: Optional[type] = None
-configure_telemetry: Optional[Callable[..., None]] = None
-instrument_fastapi: Optional[Callable[[Any], None]] = None
-
-if telemetry_enabled:
-    try:
-        from telemetry import configure_telemetry as _configure_telemetry, instrument_fastapi as _instrument_fastapi, TelemetryMiddleware as _TelemetryMiddleware
-        
-        # Assign to our typed variables
-        configure_telemetry = _configure_telemetry
-        instrument_fastapi = _instrument_fastapi
-        TelemetryMiddleware = _TelemetryMiddleware
-        
-        # Configure OpenTelemetry
-        configure_telemetry(
-            enable_console=os.getenv("TELEMETRY_CONSOLE", "false").lower() == "true"
-        )
-        print("🔭 Telemetry configured and enabled")
-    except ImportError as e:
-        print(f"⚠️  Telemetry disabled due to import error: {e}")
-        telemetry_enabled = False
 
 # Initialize the message processor
 message_processor = MessageProcessor()
@@ -65,10 +40,7 @@ app = FastAPI(
     ]
 )
 
-# Add telemetry middleware and instrumentation
-if telemetry_enabled and TelemetryMiddleware is not None and instrument_fastapi is not None:
-    app.add_middleware(TelemetryMiddleware)  # type: ignore[arg-type]
-    instrument_fastapi(app)
+instrument_fastapi(app)
 
 # Add CORS middleware to allow frontend communication
 app.add_middleware(
