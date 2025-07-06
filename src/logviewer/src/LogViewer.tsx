@@ -116,6 +116,29 @@ const LogViewer: React.FC<LogViewerProps> = ({ darkMode }) => {
     setSelectedLog(log);
   };
 
+  // Filter sensitive headers from request before display
+  const sanitizeRequest = (request: any) => {
+    if (!request) return {};
+    
+    const sanitized = { ...request };
+    
+    // Remove authorization headers (case-insensitive)
+    if (sanitized.Headers) {
+      const filteredHeaders = { ...sanitized.Headers };
+      Object.keys(filteredHeaders).forEach(key => {
+        if (key.toLowerCase().includes('authorization') || 
+            key.toLowerCase().includes('auth') ||
+            key.toLowerCase() === 'x-api-key' ||
+            key.toLowerCase() === 'api-key') {
+          filteredHeaders[key] = '[REDACTED]';
+        }
+      });
+      sanitized.Headers = filteredHeaders;
+    }
+    
+    return sanitized;
+  };
+
   return (
     <div className={`log-viewer ${darkMode ? 'theme-dark' : 'theme-light'}`}>
       <div className="log-controls">
@@ -204,7 +227,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ darkMode }) => {
                 <div className="card-body p-0">
                   <div className="details-content">
                     <pre className="json-content">
-                      {JSON.stringify(selectedLog.message?.Request || {}, null, 2)}
+                      {JSON.stringify(sanitizeRequest(selectedLog.message?.Request) || {}, null, 2)}
                     </pre>
                   </div>
                 </div>
