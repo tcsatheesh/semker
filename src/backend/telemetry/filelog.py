@@ -41,7 +41,7 @@ class FileLogExporter(LogExporter):
     def __init__(self, file_path: Path):
         self.file_path = file_path
         
-    def export(self, batch: Any):
+    def export(self, batch: Any) -> None:
         """Export log records to file."""
         try:
             with open(self.file_path, 'a', encoding='utf-8') as f:
@@ -51,7 +51,7 @@ class FileLogExporter(LogExporter):
                     level = getattr(log_record, 'severity_text', 'INFO')
                     message = str(getattr(log_record, 'body', ''))
                     
-                    log_data = {
+                    log_data: dict[str, Any] = {
                         "timestamp": timestamp,
                         "level": level,
                         "message": message,
@@ -61,7 +61,7 @@ class FileLogExporter(LogExporter):
         except Exception as e:
             print(f"Failed to export logs: {e}")
     
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown the exporter."""
         pass
 
@@ -72,7 +72,7 @@ class FileSpanExporter(SpanExporter):
     def __init__(self, file_path: Path):
         self.file_path = file_path
         
-    def export(self, spans: Any):
+    def export(self, spans: Any) -> SpanExportResult:
         """Export spans to file."""
         try:
             with open(self.file_path, 'a', encoding='utf-8') as f:
@@ -82,7 +82,7 @@ class FileSpanExporter(SpanExporter):
                     start_time = getattr(span, 'start_time', time.time_ns())
                     end_time = getattr(span, 'end_time', start_time)
                     
-                    span_data = {
+                    span_data: dict[str, Any] = {
                         "timestamp": start_time,
                         "name": name,
                         "duration_ns": end_time - start_time if end_time else 0,
@@ -94,7 +94,7 @@ class FileSpanExporter(SpanExporter):
             print(f"Failed to export spans: {e}")
             return SpanExportResult.FAILURE
     
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown the exporter."""
         pass
 
@@ -105,12 +105,12 @@ class FileMetricExporter(MetricExporter):
     def __init__(self, file_path: Path):
         self.file_path = file_path
         
-    def export(self, metrics_data: Any, timeout_millis: float = 30000, **kwargs: Any):
+    def export(self, metrics_data: Any, timeout_millis: float = 30000, **kwargs: Any) -> MetricExportResult:
         """Export metrics to file."""
         try:
             with open(self.file_path, 'a', encoding='utf-8') as f:
                 # Simple metric format
-                metric_data = {
+                metric_data: dict[str, Any] = {
                     "timestamp": int(time.time() * 1000),
                     "type": "metrics_batch",
                     "count": len(getattr(metrics_data, 'resource_metrics', [])),
@@ -122,11 +122,11 @@ class FileMetricExporter(MetricExporter):
             print(f"Failed to export metrics: {e}")
             return MetricExportResult.FAILURE
     
-    def shutdown(self, timeout_millis: float = 30000, **kwargs: Any):
+    def shutdown(self, timeout_millis: float = 30000, **kwargs: Any) -> None:
         """Shutdown the exporter."""
         pass
         
-    def force_flush(self, timeout_millis: float = 30000):
+    def force_flush(self, timeout_millis: float = 30000) -> bool:
         """Force flush the exporter."""
         return True
 
@@ -180,8 +180,9 @@ def setup_file_logging(log_level: str = "INFO") -> None:
         main_handler.setFormatter(formatter)
         
         # Apply log filter if configured
-        if hasattr(telemetry_config, 'LOG_FILTER_NAME') and telemetry_config.LOG_FILTER_NAME:
-            main_handler.addFilter(logging.Filter(telemetry_config.LOG_FILTER_NAME))
+        filter_name = getattr(telemetry_config, 'LOG_FILTER_NAME', None)
+        if filter_name:
+            main_handler.addFilter(logging.Filter(filter_name))
         
         root_logger.addHandler(main_handler)
 
