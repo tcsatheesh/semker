@@ -8,7 +8,7 @@ to add custom attributes and logging for request/response lifecycle.
 import logging
 from typing import Any
 
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor # type: ignore[import-untyped]
 from opentelemetry.trace import Span
 
 

@@ -12,7 +12,7 @@ from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor # type: ignore[import-untyped]
 
 from telemetry import set_up_logging
 from tools import billing, broadband, roaming, ticket, tariff
