@@ -1,58 +1,10 @@
 """
-Billing tool module for managing customer billing data.
+Billing data storage and management.
 
-This module provides functionality to retrieve and manage billing information
-for customers, including monthly charges and line items.
+This module contains the sample billing data used by the billing tools.
 """
 
-from mcp.server.fastmcp import FastMCP
-from pydantic import BaseModel
-
-mcp = FastMCP(
-    name="BillingTool",
-    stateless_http=True,
-)
-
-
-class LineItem(BaseModel):
-    """
-    Represents a single line item in a customer's bill.
-
-    Attributes:
-        description: Description of the charge.
-        amount: The monetary amount for this line item.
-        notes: Additional notes about the charge.
-    """
-
-    description: str
-    amount: float
-    notes: str
-
-
-class Bill(BaseModel):
-    """
-    Represents a customer's bill for a specific month.
-
-    Attributes:
-        month: The month number (1-12) for this bill.
-        details: List of line items for this bill.
-        currency: The currency code for this bill (e.g., "EUR", "USD").
-    """
-
-    month: int
-    details: list[LineItem]
-    currency: str
-
-
-class BillingData(BaseModel):
-    """
-    Container for billing data containing one or more bills.
-
-    Attributes:
-        bills: List of bills for the customer.
-    """
-
-    bills: list[Bill]
+from .schemas import Bill, LineItem
 
 
 bills = [
@@ -156,31 +108,3 @@ bills = [
         currency="EUR",
     ),
 ]
-
-
-@mcp.tool(description="A tool to retrieve billing data for customers")
-async def get_billing_data(
-    month: int,
-) -> BillingData:
-    """
-    Get billing data for a customer for a specific month.
-
-    Args:
-        month: The month number (1-12) to retrieve billing data for.
-
-    Returns:
-        BillingData: Container with the billing information for the specified month.
-
-    Raises:
-        ValueError: If month is not between 1 and 12, or if no billing data
-                   is found for the specified month.
-    """
-    # Simulated billing data
-    if month < 1 or month > 12:
-        raise ValueError("Month must be between 1 and 12")
-    try:
-        _bill: Bill = next(bill for bill in bills if bill.month == month)
-        billing_data = BillingData(bills=[_bill])
-        return billing_data
-    except StopIteration:
-        raise ValueError(f"No billing data found for month {month}") from None

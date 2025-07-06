@@ -1,47 +1,17 @@
 """
-Support ticket management tool module.
+Support ticket data access and business logic.
 
-This module provides functionality to raise support tickets with chat history
-and consent management.
+This module contains the functions for managing support tickets.
 """
 
 import random
-from typing import Annotated
-
-from mcp.server.fastmcp import FastMCP
-from pydantic import BaseModel
-
-mcp = FastMCP(
-    name="TicketingTool",
-    stateless_http=True,
-)
+from .schemas import TicketResponse
 
 
-class TicketResponse(BaseModel):
-    """
-    Represents the response from a support ticket creation request.
-
-    Attributes:
-        ticket_number: Unique identifier for the support ticket.
-        status: Current status of the ticket (e.g., "Open", "Closed").
-        description: Description of the ticket creation result.
-    """
-
-    ticket_number: str
-    status: str
-    description: str
-
-
-@mcp.tool(description="A tool raise a support ticket")
-async def raise_support_ticket(
-    chat_history: Annotated[
-        str, "The chat history leading to the support ticket request"
-    ],
-    consent: Annotated[bool, "Consent to raise a support ticket was a true or false"],
-    consent_response: Annotated[
-        str,
-        "The response to the consent question, e.g., 'Yes, I consent to raise a support ticket.'",
-    ],
+def raise_support_ticket_data(
+    chat_history: str,
+    consent: bool,
+    consent_response: str,
 ) -> TicketResponse:
     """
     Raise a support ticket with the provided chat history and consent.

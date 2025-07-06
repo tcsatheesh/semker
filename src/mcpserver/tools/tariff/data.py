@@ -1,71 +1,14 @@
 """
-Tariff and usage data management tool module.
+Tariff data access and business logic.
 
-This module provides functionality to retrieve tariff information and usage
-details for customers.
+This module contains the data and functions for managing tariff plans.
 """
 
-from typing import List, Optional, Literal
 from datetime import date
-from mcp.server.fastmcp import FastMCP
-from pydantic import BaseModel
-
-mcp = FastMCP(
-    name="TariffTool",
-    stateless_http=True,
+from .schemas import (
+    TariffPlan, ValidityPeriod, UsageLimit, AddOn, NetworkAccess,
+    CustomerSegment, PromotionalOffer, PricingStructure
 )
-
-
-# Type aliases for better type safety
-ServiceType = Literal["voice", "data", "sms", "roaming", "value_added_service"]
-PricingStructure = Literal["prepaid", "postpaid", "hybrid", "flat_rate", "tiered"]
-
-
-class ValidityPeriod(BaseModel):
-    duration: int
-    unit: Literal["days", "weeks", "months", "years"]
-
-
-class UsageLimit(BaseModel):
-    limit: Optional[float] = None  # e.g., GB for data, minutes for voice
-    unit: Optional[str] = None
-    fair_usage_policy: bool = False
-    rollover: bool = False
-
-
-class AddOn(BaseModel):
-    name: str
-    description: Optional[str]
-    price: float
-    validity: Optional[ValidityPeriod]
-
-
-class NetworkAccess(BaseModel):
-    access_types: List[Literal["2G", "3G", "4G", "5G"]]
-
-
-class CustomerSegment(BaseModel):
-    segment: Literal["retail", "enterprise", "youth", "senior", "iot", "m2m"]
-
-
-class PromotionalOffer(BaseModel):
-    description: str
-    start_date: date
-    end_date: Optional[date]
-
-
-class TariffPlan(BaseModel):
-    name: str
-    service_types: List[ServiceType]
-    pricing_structure: PricingStructure
-    price: float
-    validity: ValidityPeriod
-    usage_limits: List[UsageLimit] = []
-    add_ons: List[AddOn] = []
-    network_access: NetworkAccess
-    customer_segment: CustomerSegment
-    promotional_offers: List[PromotionalOffer] = []
-    regulatory_compliance_notes: Optional[str] = None
 
 
 postpaid_sample_tariff = TariffPlan(
@@ -173,7 +116,6 @@ hybrid_tariff_5g = TariffPlan(
     regulatory_compliance_notes="Compliant with 5G hybrid service regulations."
 )
 
-
 prepaid_tariff_5g = TariffPlan(
     name="UltraFlex 5G Prepaid",
     service_types=["voice", "data", "sms"],
@@ -205,7 +147,6 @@ prepaid_tariff_5g = TariffPlan(
     regulatory_compliance_notes="Prepaid 5G plan approved under national telecom guidelines."
 )
 
-
 flat_rate_tariff = TariffPlan(
     name="UnlimitedMax 5G Flat",
     service_types=["voice", "data", "sms"],
@@ -236,7 +177,6 @@ flat_rate_tariff = TariffPlan(
     ],
     regulatory_compliance_notes="Flat rate plan complies with unlimited usage guidelines and fair usage policies."
 )
-
 
 tiered_tariff = TariffPlan(
     name="StepUp 5G Tiered",
@@ -276,10 +216,7 @@ tiered_tariff = TariffPlan(
 )
 
 
-@mcp.tool(description="A tool to retrieve tariff plan for customers")
-async def get_tariff_plan(
-    pricing_structure: PricingStructure,
-) -> TariffPlan:
+def get_tariff_plan_data(pricing_structure: PricingStructure) -> TariffPlan:
     """
     Get tariff plan for a customer based on pricing structure.
 
@@ -306,8 +243,8 @@ async def get_tariff_plan(
         raise ValueError(f"Unsupported pricing structure: {pricing_structure}")
     return _selected_tariff
 
-@mcp.tool(description="A tool to retrieve current tariff plan for a customer")
-async def get_current_tariff_plan() -> TariffPlan:
+
+def get_current_tariff_plan_data() -> TariffPlan:
     """
     Get the current tariff plan for a customer.
 

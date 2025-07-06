@@ -1,42 +1,10 @@
 """
-Broadband troubleshooting tool module.
+Broadband troubleshooting data access and business logic.
 
-This module provides functionality to retrieve troubleshooting steps
-for different broadband router models.
+This module contains the data and functions for managing broadband troubleshooting.
 """
 
-from mcp.server.fastmcp import FastMCP
-from pydantic import BaseModel
-
-mcp = FastMCP(
-    name="BroadbandTroubleshootingTool",
-    stateless_http=True,
-)
-
-
-class TroubleshootingModel(BaseModel):
-    """
-    Represents troubleshooting steps for a specific router model.
-
-    Attributes:
-        model_name: The name/brand of the router model.
-        steps: List of troubleshooting steps, each step is a dictionary
-               with step number as key and instruction as value.
-    """
-
-    model_name: str
-    steps: list[dict[str, str]]
-
-
-class Troubleshooting(BaseModel):
-    """
-    Container for troubleshooting information.
-
-    Attributes:
-        troubleshooting_models: List of troubleshooting models with their steps.
-    """
-
-    troubleshooting_models: list[TroubleshootingModel]
+from .schemas import TroubleshootingModel, Troubleshooting
 
 
 troubleshooting_models: list[TroubleshootingModel] = [
@@ -57,10 +25,7 @@ troubleshooting_models: list[TroubleshootingModel] = [
 ]
 
 
-@mcp.tool(description="A tool to retrieve broadband troubleshooting steps")
-async def get_troubleshooting_steps(
-    model_name: str,
-) -> Troubleshooting:
+def get_troubleshooting_steps_data(model_name: str) -> Troubleshooting:
     """
     Get troubleshooting steps for a specific broadband router model.
 

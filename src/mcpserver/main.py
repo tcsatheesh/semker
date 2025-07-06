@@ -10,7 +10,7 @@ import contextlib
 from collections.abc import AsyncGenerator
 
 from fastapi import FastAPI
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor # type: ignore[import-untyped]
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from telemetry import set_up_logging
 from tools import billing, broadband, roaming, ticket, tariff

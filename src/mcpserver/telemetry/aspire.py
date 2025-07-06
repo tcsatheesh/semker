@@ -20,14 +20,14 @@ from opentelemetry.sdk.metrics.view import DropAggregation, View
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.semconv.resource import ResourceAttributes # type: ignore[import-untyped]
+from opentelemetry.semconv.resource import ResourceAttributes
 from opentelemetry.trace import set_tracer_provider
 
 # Endpoint to the Aspire Dashboard
 endpoint = "http://localhost:4317"
 
 # Create a resource to represent the service/sample
-resource = Resource.create({ResourceAttributes.SERVICE_NAME: "mcp-server"}) # type: ignore[call-arg]
+resource = Resource.create({ResourceAttributes.SERVICE_NAME: "mcp-server"})
 
 
 def set_up_logging() -> None:
