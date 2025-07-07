@@ -5,7 +5,7 @@ Telemetry package for OpenTelemetry integration with .NET Aspire Dashboard
 import os
 from typing import Final, Any
 
-_logging_type: str = os.getenv("SEMKER_LOGGING_TYPE", "file").lower()
+_logging_type: str = os.getenv("SEMKER_LOGGING_TYPE", "aspire").lower()
 
 if _logging_type == "appinsights":
     from .appinsights import set_up_logging, set_up_tracing, set_up_metrics
