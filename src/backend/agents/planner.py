@@ -76,6 +76,9 @@ class Planner:
             Step 4: Call sub-agent(s) and await response. → [Intermediate Update: Sub-agent response summaries]
             Step 5: Integrate all sub-agent inputs into a coherent final output. → [Reasoning Step 5 Output]
             Final Answer: → [Synthesized response using all results]
+                          → Present response in a concise, well-structured format, using stepwise explanation when helpful.
+                          → All data should be presented in a table format and MUST be preceeded by briefly describing what the table contains, with clear headings for each column.
+            
         """
 
     @classmethod
