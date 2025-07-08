@@ -1,9 +1,35 @@
 """
-Planner Agent module for routing user requests to appropriate specialized agents.
+Planner Agent module for intelligent routing and request orchestration.
 
-This module provides the PlannerAgent class that acts as a router/orchestrator,
-analyzing user messages and delegating them to the most appropriate specialized
-agent (Billing, Roaming, Broadband, Ticketing, etc.) based on the content.
+This module provides the PlannerAgent class that acts as a smart router and
+orchestrator, analyzing user messages and delegating them to the most appropriate
+specialized agent (Billing, Roaming, Tariff, FAQ, etc.) based on content analysis
+and intent recognition.
+
+Classes:
+    Planner: Configuration class containing agent settings and routing logic
+    PlannerAgent: Main orchestrator agent for request routing and delegation
+
+Features:
+    - Intelligent message classification and routing
+    - Multi-agent orchestration and coordination
+    - Dynamic agent selection based on content analysis
+    - Fallback handling for unrecognized requests
+    - Transparent reasoning with chain-of-thought approach
+    - Real-time routing decisions with explanations
+
+Example:
+    ```python
+    planner = PlannerAgent(kernel)
+    response = await planner.process_message_async(
+        message="What is my current bill?",
+        message_id="msg-123",
+        thread_id="thread-456",
+        thread=thread,
+        on_intermediate_response=callback
+    )
+    # Planner routes to BillingAgent automatically
+    ```
 """
 
 import json
@@ -20,7 +46,32 @@ from config.constants import MessageStatus
 
 
 class Planner:
-    """Planner agent-specific configuration settings."""
+    """
+    Configuration class for the Planner Agent.
+
+    This class contains all configuration settings, constants, and templates
+    needed for the Planner Agent to function as an intelligent router and
+    orchestrator. It manages the list of available agents and provides
+    the reasoning framework for routing decisions.
+
+    Class Attributes:
+        AGENT_NAME: The identifier name for this agent
+        AVAILABLE_AGENTS: List of available specialized agents with descriptions
+        AGENT_TEMPLATE: Comprehensive instructions for routing and orchestration
+
+    Features:
+        - Dynamic agent discovery and routing
+        - Multi-agent coordination capabilities
+        - Transparent reasoning with chain-of-thought approach
+        - Fallback handling for unrecognized requests
+        - Clear user communication about routing decisions
+
+    Available Agents:
+        - Billing: Handles billing-related tasks and inquiries
+        - Roaming: Manages roaming-related inquiries and rates
+        - Tariff: Handles tariff-related inquiries and plan information
+        - FAQ: Provides answers to frequently asked questions
+    """
 
     # Agent identity
     AGENT_NAME: Final[str] = "Planner"

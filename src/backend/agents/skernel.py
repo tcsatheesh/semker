@@ -39,14 +39,34 @@ if TYPE_CHECKING:
 
 
 class KernelUtils:
-    """Utility class for creating and managing Semantic Kernel instances.
+    """
+    Utility class for creating and managing Semantic Kernel instances.
     
-    This class provides functionality to initialize Semantic Kernel instances
-    with Azure OpenAI services, including custom HTTP clients with telemetry
-    and logging capabilities.
+    This class provides comprehensive functionality to initialize Semantic Kernel
+    instances with Azure OpenAI services, including custom HTTP clients with
+    telemetry, logging capabilities, and conversation context management.
+    
+    The KernelUtils class handles:
+    - Semantic Kernel initialization with Azure OpenAI
+    - Custom HTTP client configuration with telemetry hooks
+    - Authentication management (API key or Azure AD)
+    - Connection pooling and timeout configuration
+    - Request/response interceptors for logging and monitoring
+    - Agent instantiation and lifecycle management
     
     Attributes:
-        kernel (Kernel): The initialized Semantic Kernel instance.
+        kernel (Kernel): The initialized Semantic Kernel instance with
+                        configured Azure OpenAI services and custom HTTP client.
+    
+    Example:
+        ```python
+        kernel_utils = KernelUtils(
+            message_id="msg-123",
+            thread_id="thread-456"
+        )
+        agent = kernel_utils.get_agent()
+        response = await agent.process_message_async(...)
+        ```
     """
 
     def __init__(
@@ -54,11 +74,23 @@ class KernelUtils:
         message_id: str,
         thread_id: str,
     ) -> None:
-        """Initialize KernelUtils with message and thread identifiers.
+        """
+        Initialize KernelUtils with message and thread identifiers.
+        
+        Creates a Semantic Kernel instance configured with Azure OpenAI services,
+        custom HTTP client with telemetry hooks, and conversation context headers.
         
         Args:
-            message_id: Unique identifier for the message.
+            message_id: Unique identifier for the current message being processed.
+                       Used for request tracing and correlation across services.
             thread_id: Unique identifier for the conversation thread.
+                      Used for maintaining conversation context and history.
+        
+        Side Effects:
+            - Initializes the kernel attribute with a configured Semantic Kernel
+            - Sets up HTTP client with telemetry interceptors
+            - Configures Azure OpenAI authentication (API key or Azure AD)
+            - Establishes connection pooling and timeout settings
         """
         self.kernel = self._init_kernel(
             message_id=message_id,
@@ -70,14 +102,40 @@ class KernelUtils:
         message_id: str,
         thread_id: str,
     ) -> Kernel:
-        """Initialize a Semantic Kernel instance with Azure OpenAI integration.
+        """
+        Initialize a Semantic Kernel instance with Azure OpenAI integration.
         
         Creates a custom HTTP client with telemetry hooks and configures
-        the kernel with Azure OpenAI chat completion services.
+        the kernel with Azure OpenAI chat completion services. This method
+        handles both API key and Azure AD authentication methods.
         
         Args:
-            message_id: Unique identifier for the message.
-            thread_id: Unique identifier for the conversation thread.
+            message_id: Unique identifier for the message, added to HTTP headers
+                       for request tracing and correlation.
+            thread_id: Unique identifier for the conversation thread, added to
+                      HTTP headers for conversation context management.
+            
+        Returns:
+            Kernel: Configured Semantic Kernel instance with:
+                   - Azure OpenAI chat completion service
+                   - Custom HTTP client with telemetry hooks
+                   - Request/response interceptors for logging
+                   - Connection pooling and timeout configuration
+                   - Authentication (API key or Azure AD token provider)
+        
+        Configuration:
+            - Timeout settings from HttpClient configuration
+            - Connection limits and keepalive settings
+            - Request/response/error interceptors for telemetry
+            - Authentication method determined by AZURE_OPENAI_API_KEY presence
+        
+        Example:
+            The method creates an HTTP client with these features:
+            - Request timeout: 30 seconds (configurable)
+            - Connection timeout: 10 seconds (configurable)
+            - Max connections: 100 (configurable)
+            - Telemetry hooks for all request/response cycles
+        """
             
         Returns:
             Kernel: Configured Semantic Kernel instance.
@@ -135,12 +193,31 @@ class KernelUtils:
     def get_agent(
         self,
     ) -> "PlannerAgent":
-        """Create and return a PlannerAgent instance.
+        """
+        Create and return a PlannerAgent instance.
         
         Initializes a PlannerAgent with the configured Semantic Kernel instance.
+        The PlannerAgent serves as the main entry point for message processing
+        and routing to appropriate specialized agents.
         
         Returns:
-            PlannerAgent: Configured planner agent instance.
+            PlannerAgent: Configured planner agent instance ready for message processing.
+                         The agent is initialized with the kernel containing Azure OpenAI
+                         services and custom HTTP client configuration.
+        
+        Example:
+            ```python
+            kernel_utils = KernelUtils("msg-123", "thread-456")
+            planner_agent = kernel_utils.get_agent()
+            
+            response = await planner_agent.process_message_async(
+                message="What is my bill?",
+                message_id="msg-123",
+                thread_id="thread-456",
+                thread=chat_thread,
+                on_intermediate_response=callback
+            )
+            ```
         """
         _kernel = self.kernel
 

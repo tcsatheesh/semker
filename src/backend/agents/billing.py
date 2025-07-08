@@ -3,7 +3,32 @@ Billing Agent module for handling billing-related tasks and inquiries.
 
 This module provides the BillingAgent class that specializes in processing
 billing-related user requests through the Model Context Protocol (MCP)
-and Semantic Kernel framework.
+and Semantic Kernel framework. The agent connects to external billing services
+to retrieve accurate billing information while maintaining security and privacy.
+
+Classes:
+    Billing: Configuration class containing agent settings and templates
+    BillingAgent: Main agent class for processing billing inquiries
+
+Features:
+    - Secure MCP integration with billing services
+    - Structured chain-of-thought reasoning
+    - Real-time intermediate response updates
+    - Data privacy and security enforcement
+    - Tool-based data retrieval validation
+    - Tabular billing information presentation
+
+Example:
+    ```python
+    agent = BillingAgent(kernel)
+    response = await agent.process_message_async(
+        message="What is my current bill?",
+        message_id="msg-123",
+        thread_id="thread-456",
+        thread=thread,
+        on_intermediate_response=callback
+    )
+    ```
 """
 
 import json
@@ -23,7 +48,30 @@ from agents.config import Services, Headers
 
 
 class Billing:
-    """Billing agent-specific configuration settings."""
+    """
+    Configuration class for the Billing Agent.
+
+    This class contains all configuration settings, constants, and templates
+    needed for the Billing Agent to function properly. It provides a centralized
+    location for agent-specific settings including MCP endpoint configuration,
+    agent identity, and processing instructions.
+
+    Class Attributes:
+        AGENT_NAME: The identifier name for this agent
+        PLUGIN_NAME: The name of the MCP plugin for billing services
+        PLUGIN_DESCRIPTION: Description of the plugin functionality
+        AGENT_TEMPLATE: Comprehensive instructions for the agent's behavior
+
+    Methods:
+        get_mcp_endpoint: Returns the MCP server endpoint for billing services
+
+    Features:
+        - Secure data handling with privacy protection
+        - Structured reasoning with chain-of-thought approach
+        - Tool-based data validation to prevent hallucination
+        - Clear error handling for unavailable data
+        - Tabular presentation of billing information
+    """
 
     # Agent identity
     AGENT_NAME: Final[str] = "Billing"
@@ -33,7 +81,16 @@ class Billing:
     # Service endpoint
     @classmethod
     def get_mcp_endpoint(cls) -> str:
-        """Get the MCP endpoint for billing service."""
+        """
+        Get the MCP endpoint URL for the billing service.
+
+        Returns:
+            str: The complete URL endpoint for the billing MCP server
+
+        Note:
+            This method retrieves the endpoint from the Services configuration
+            which can be customized via environment variables.
+        """
         return Services.BILLING_MCP_SERVER_URL
 
     # Agent template
@@ -96,16 +153,45 @@ class Billing:
 
 class BillingAgent(BaseAgent):
     """
-    Billing Agent for handling billing-related tasks and inquiries.
+    Specialized agent for handling billing-related inquiries and tasks.
     
-    This agent specializes in processing billing-related requests by connecting
-    to a billing service through MCP (Model Context Protocol) and providing
-    accurate billing information while maintaining security and privacy.
+    This agent extends the BaseAgent class to provide specialized functionality
+    for processing billing-related requests. It connects to external billing
+    services through the Model Context Protocol (MCP) to retrieve accurate
+    billing information while maintaining strict security and privacy standards.
     
-    The agent is configured with specific instructions to:
-    - Handle billing inquiries professionally
-    - Protect sensitive information
-    - Provide clear responses when data is unavailable
+    The BillingAgent implements a structured chain-of-thought approach to:
+    - Analyze billing-related queries step by step
+    - Retrieve data only from verified tools and services
+    - Protect sensitive billing information
+    - Present information in clear, tabular formats
+    - Handle error cases gracefully without hallucination
+    
+    Key Features:
+        - MCP integration for secure billing data access
+        - Chain-of-thought reasoning for transparency
+        - Real-time intermediate response updates
+        - Strict data validation and privacy protection
+        - Professional billing information presentation
+        - Graceful handling of unavailable data
+    
+    Security Measures:
+        - No assumptions or hallucinated billing data
+        - Tool-based data validation only
+        - Clear error messages for unavailable information
+        - No redirection to external support channels
+    
+    Example Usage:
+        ```python
+        billing_agent = BillingAgent(kernel)
+        response = await billing_agent.process_message_async(
+            message="What are my current charges?",
+            message_id="msg-123",
+            thread_id="thread-456",
+            thread=chat_thread,
+            on_intermediate_response=update_callback
+        )
+        ```
     """
 
     def __init__(
@@ -113,10 +199,27 @@ class BillingAgent(BaseAgent):
         kernel: Kernel,
     ) -> None:
         """
-        Initialize the Billing Agent.
+        Initialize the Billing Agent with Semantic Kernel configuration.
+        
+        This constructor sets up the billing agent with specific execution settings
+        optimized for billing inquiries, including structured response formatting
+        and temperature settings for consistent, accurate responses.
         
         Args:
-            kernel: The Semantic Kernel instance for AI operations
+            kernel: The Semantic Kernel instance configured with AI services
+                   and necessary connectors for billing operations
+        
+        Configuration:
+            - Response format set to AgentLLMResponse for structured output
+            - Temperature set to 0.0 for consistent, deterministic responses
+            - Agent name, instructions, and settings applied from Billing config
+        
+        Example:
+            ```python
+            kernel = Kernel()
+            # Configure kernel with AI services...
+            billing_agent = BillingAgent(kernel)
+            ```
         """
         settings = AzureChatPromptExecutionSettings()
         settings.response_format = AgentLLMResponse
@@ -138,30 +241,56 @@ class BillingAgent(BaseAgent):
         on_intermediate_response: Callable[..., None],
     ) -> AgentResponse:
         """
-        Process a billing-related message asynchronously.
+        Process a billing-related message asynchronously with MCP integration.
         
-        This method handles billing inquiries by:
-        1. Connecting to the billing service via MCP plugin
-        2. Processing the user's message through the AI model
-        3. Providing intermediate status updates
-        4. Returning the final billing response
+        This method handles billing inquiries by connecting to external billing
+        services through MCP, processing the user's message with chain-of-thought
+        reasoning, and providing real-time updates throughout the process.
+        
+        Processing Flow:
+        1. Establish MCP connection to billing service
+        2. Add billing plugin to the kernel
+        3. Process message through AI model with structured reasoning
+        4. Send intermediate updates for each reasoning step
+        5. Generate final structured response
+        6. Clean up MCP connection
         
         Args:
-            message: The user's billing-related message
-            message_id: Unique identifier for the message
+            message: The user's billing-related message or question
+            message_id: Unique identifier for tracking this message
             thread_id: Unique identifier for the conversation thread
-            thread: Chat history thread for context
-            on_intermediate_response: Callback for intermediate status updates
+            thread: Chat history thread containing conversation context
+            on_intermediate_response: Callback function for sending real-time updates
+                                    Called with (message_id, status, result, agent_name)
         
         Returns:
-            A tuple containing:
-                - The agent's final response message
-                - The updated thread after processing
-                - The agent name ("Billing")
+            AgentResponse: Structured response containing:
+                - reply: The final billing response message
+                - human_input_required: Whether additional input is needed
+                - able_to_serve: Whether the agent could serve the request
+                - thread: Updated conversation thread
+                - agent_name: "Billing"
         
         Raises:
-            Exception: If there are issues connecting to the billing service
-                      or processing the request
+            Exception: If MCP connection fails or message processing encounters errors
+        
+        Security Features:
+            - All data retrieved through verified MCP tools only
+            - No assumptions or hallucinated billing information
+            - Clear error handling for unavailable data
+            - Automatic connection cleanup for security
+        
+        Example:
+            ```python
+            response = await billing_agent.process_message_async(
+                message="What is my current bill?",
+                message_id="msg-123",
+                thread_id="thread-456",
+                thread=chat_thread,
+                on_intermediate_response=lambda id, status, result, name: print(f"{status}: {result}")
+            )
+            print(response.reply)  # Final billing response
+            ```
         """
         plugin = MCPStreamableHttpPlugin(
             name=Billing.PLUGIN_NAME,

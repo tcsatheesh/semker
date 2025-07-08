@@ -1,3 +1,36 @@
+"""
+Tariff Agent module for handling tariff-related inquiries and plan information.
+
+This module provides the TariffAgent class that specializes in processing
+tariff-related user requests through the Model Context Protocol (MCP)
+and Semantic Kernel framework. The agent focuses on providing accurate
+tariff information and plan comparisons.
+
+Classes:
+    Tariff: Configuration class containing agent settings and templates
+    TariffAgent: Main agent class for processing tariff inquiries
+
+Features:
+    - MCP integration with tariff information services
+    - Current tariff data retrieval and presentation
+    - Tabular format for clear information display
+    - Tool-based data validation to ensure accuracy
+    - Real-time intermediate response updates
+    - Secure data handling and privacy protection
+
+Example:
+    ```python
+    agent = TariffAgent(kernel)
+    response = await agent.process_message_async(
+        message="What are the current mobile tariffs?",
+        message_id="msg-123",
+        thread_id="thread-456",
+        thread=thread,
+        on_intermediate_response=callback
+    )
+    ```
+"""
+
 import json
 from typing import Callable, Final
 
@@ -13,7 +46,30 @@ from config.constants import MessageStatus
 from .config import Services, Headers
 
 class Tariff:
-    """Tariff agent-specific configuration settings."""
+    """
+    Configuration class for the Tariff Agent.
+
+    This class contains all configuration settings, constants, and templates
+    needed for the Tariff Agent to function properly. It provides centralized
+    configuration for tariff information queries, MCP endpoint management,
+    and agent behavior instructions.
+
+    Class Attributes:
+        AGENT_NAME: The identifier name for this agent
+        PLUGIN_NAME: The name of the MCP plugin for tariff services
+        PLUGIN_DESCRIPTION: Description of the plugin functionality
+        AGENT_TEMPLATE: Comprehensive instructions for tariff-specific behavior
+
+    Methods:
+        get_mcp_endpoint: Returns the MCP server endpoint for tariff services
+
+    Features:
+        - Current tariff data retrieval and presentation
+        - Tabular format for clear information display
+        - Tool-based data validation to ensure accuracy
+        - Professional presentation of tariff information
+        - Clear handling of unavailable data scenarios
+    """
 
     # Agent identity
     AGENT_NAME: Final[str] = "Tariff"
@@ -23,7 +79,17 @@ class Tariff:
     # Service endpoint
     @classmethod
     def get_mcp_endpoint(cls) -> str:
-        """Get the MCP endpoint for tariffs service."""
+        """
+        Get the MCP endpoint URL for the tariff service.
+
+        Returns:
+            str: The complete URL endpoint for the tariff MCP server
+
+        Note:
+            This method retrieves the endpoint from the Services configuration
+            which can be customized via environment variables for different
+            deployment environments.
+        """
         return Services.TARIFF_MCP_SERVER_URL
 
     # Agent template

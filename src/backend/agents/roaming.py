@@ -3,7 +3,32 @@ Roaming Agent module for handling roaming-related tasks and inquiries.
 
 This module provides the RoamingAgent class that specializes in processing
 roaming-related user requests through the Model Context Protocol (MCP)
-and Semantic Kernel framework.
+and Semantic Kernel framework. The agent focuses on providing accurate
+roaming rate information and coverage details for international travel.
+
+Classes:
+    Roaming: Configuration class containing agent settings and templates
+    RoamingAgent: Main agent class for processing roaming inquiries
+
+Features:
+    - MCP integration with roaming rate services
+    - Country-specific roaming rate retrieval
+    - Chain-of-thought reasoning for transparency
+    - Real-time intermediate response updates
+    - Secure data handling and validation
+    - Professional roaming information presentation
+
+Example:
+    ```python
+    agent = RoamingAgent(kernel)
+    response = await agent.process_message_async(
+        message="What are the roaming rates for Spain?",
+        message_id="msg-123",
+        thread_id="thread-456",
+        thread=thread,
+        on_intermediate_response=callback
+    )
+    ```
 """
 
 import json
@@ -21,7 +46,30 @@ from .config import Services, Headers
 
 
 class Roaming:
-    """Roaming agent-specific configuration settings."""
+    """
+    Configuration class for the Roaming Agent.
+
+    This class contains all configuration settings, constants, and templates
+    needed for the Roaming Agent to function properly. It provides centralized
+    configuration for roaming rate queries, MCP endpoint management, and
+    agent behavior instructions.
+
+    Class Attributes:
+        AGENT_NAME: The identifier name for this agent
+        PLUGIN_NAME: The name of the MCP plugin for roaming services
+        PLUGIN_DESCRIPTION: Description of the plugin functionality
+        AGENT_TEMPLATE: Comprehensive instructions for roaming-specific behavior
+
+    Methods:
+        get_mcp_endpoint: Returns the MCP server endpoint for roaming services
+
+    Features:
+        - Country-specific roaming rate retrieval
+        - Month-based rate queries for billing cycles
+        - Chain-of-thought reasoning for transparency
+        - Tool-based data validation to prevent errors
+        - Professional presentation of roaming information
+    """
 
     # Agent identity
     AGENT_NAME: Final[str] = "Roaming"
@@ -31,7 +79,17 @@ class Roaming:
     # Service endpoint
     @classmethod
     def get_mcp_endpoint(cls) -> str:
-        """Get the MCP endpoint for roaming service."""
+        """
+        Get the MCP endpoint URL for the roaming service.
+
+        Returns:
+            str: The complete URL endpoint for the roaming MCP server
+
+        Note:
+            This method retrieves the endpoint from the Services configuration
+            which can be customized via environment variables for different
+            deployment environments.
+        """
         
         return Services.ROAMING_MCP_SERVER_URL
 

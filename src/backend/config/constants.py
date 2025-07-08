@@ -1,13 +1,69 @@
 """
-Application constants - fixed values that never change
-These are immutable values used throughout the application
+Application constants for the Semker API.
+
+This module defines all fixed values used throughout the application that
+never change across different environments or deployments. These immutable
+constants ensure consistency and prevent magic strings in the codebase.
+
+Constant Classes:
+    Routes: API route path definitions
+    Tags: OpenAPI documentation tags
+    HTTPMethods: HTTP method constants
+    StatusCodes: HTTP status code constants
+    MessageStatus: Message processing status constants
+    Summaries: API endpoint summary descriptions
+    Descriptions: API endpoint detailed descriptions
+    ContentTypes: HTTP content type constants
+    HeaderNames: HTTP header name constants
+
+Features:
+    - Type-safe constant definitions using Final
+    - Centralized constant management
+    - Immutable values that prevent accidental changes
+    - Comprehensive HTTP and API-related constants
+    - OpenAPI documentation strings
+
+Usage:
+    ```python
+    from config.constants import Routes, MessageStatus
+    
+    # Route definitions
+    messages_route = Routes.MESSAGES  # "/messages"
+    
+    # Status constants
+    status = MessageStatus.RECEIVED  # "received"
+    ```
+
+Note:
+    All constants in this module use typing.Final to ensure immutability
+    and provide type safety. These values should never be modified at runtime.
 """
 
 from typing import Final
 
 
 class Routes:
-    """API route path constants - these should never change"""
+    """
+    API route path constants for endpoint definitions.
+
+    This class defines all URL paths used in the API routing system.
+    These paths are immutable and provide a single source of truth
+    for all endpoint definitions.
+
+    Route Categories:
+        - Root and documentation routes
+        - Health and system monitoring routes  
+        - Message processing routes
+
+    Example:
+        ```python
+        from config.constants import Routes
+        
+        @app.get(Routes.HEALTH)
+        async def health_check():
+            return {"status": "healthy"}
+        ```
+    """
     
     ROOT: Final[str] = "/"
     DOCS: Final[str] = "/docs"
@@ -26,7 +82,28 @@ class Routes:
 
 
 class Tags:
-    """OpenAPI documentation tag constants"""
+    """
+    OpenAPI documentation tag constants for endpoint grouping.
+
+    This class defines tags used to group related endpoints in the
+    OpenAPI documentation interface. Tags help organize the API
+    documentation into logical sections.
+
+    Tag Categories:
+        - Messages: Message processing endpoints
+        - System: System and health endpoints
+        - Documentation: Documentation-related endpoints
+        - Health: Health check endpoints
+
+    Example:
+        ```python
+        from config.constants import Tags
+        
+        @app.get("/messages", tags=[Tags.MESSAGES])
+        async def list_messages():
+            return {"messages": []}
+        ```
+    """
     
     MESSAGES: Final[str] = "Messages"
     SYSTEM: Final[str] = "System" 
@@ -35,7 +112,30 @@ class Tags:
 
 
 class HTTPMethods:
-    """HTTP method constants"""
+    """
+    HTTP method constants for request type definitions.
+
+    This class provides constants for all standard HTTP methods used
+    in REST API development. Using these constants ensures consistency
+    and prevents typos in method names.
+
+    Supported Methods:
+        - GET: Retrieve data
+        - POST: Create new resources
+        - PUT: Update entire resources
+        - PATCH: Update partial resources
+        - DELETE: Remove resources
+        - HEAD: Get headers only
+        - OPTIONS: Check allowed methods
+
+    Example:
+        ```python
+        from config.constants import HTTPMethods
+        
+        # Instead of using string literals
+        method = HTTPMethods.POST  # "POST"
+        ```
+    """
     
     GET: Final[str] = "GET"
     POST: Final[str] = "POST" 
@@ -47,7 +147,28 @@ class HTTPMethods:
 
 
 class StatusCodes:
-    """Common HTTP status code constants"""
+    """
+    HTTP status code constants for response handling.
+
+    This class provides constants for commonly used HTTP status codes
+    in REST API responses. Using these constants improves code readability
+    and ensures consistent status code usage.
+
+    Status Categories:
+        - 2xx Success: OK, CREATED, ACCEPTED, NO_CONTENT
+        - 4xx Client Errors: BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, etc.
+        - 5xx Server Errors: INTERNAL_SERVER_ERROR, BAD_GATEWAY, etc.
+
+    Example:
+        ```python
+        from config.constants import StatusCodes
+        
+        raise HTTPException(
+            status_code=StatusCodes.NOT_FOUND,
+            detail="Resource not found"
+        )
+        ```
+    """
     
     # Success
     OK: Final[int] = 200
@@ -73,7 +194,34 @@ class StatusCodes:
 
 
 class MessageStatus:
-    """Message processing status constants"""
+    """
+    Message processing status constants for state tracking.
+
+    This class defines all possible states that a message can be in
+    during its processing lifecycle. These constants ensure consistent
+    status reporting across the application.
+
+    Status Flow:
+        RECEIVED → IN_PROGRESS → COMPLETED/FAILED/CANCELLED
+
+    Status Definitions:
+        - RECEIVED: Message has been received and queued
+        - IN_PROGRESS: Message is currently being processed
+        - COMPLETED: Message processing finished successfully
+        - FAILED: Message processing encountered an error
+        - CANCELLED: Message processing was cancelled
+
+    Example:
+        ```python
+        from config.constants import MessageStatus
+        
+        message_status = MessageStatus.RECEIVED  # "received"
+        
+        if status == MessageStatus.COMPLETED:
+            # Handle successful processing
+            pass
+        ```
+    """
     
     RECEIVED: Final[str] = "received"
     IN_PROGRESS: Final[str] = "inprogress" 
@@ -83,7 +231,26 @@ class MessageStatus:
 
 
 class Summaries:
-    """API endpoint summary constants for OpenAPI documentation"""
+    """
+    API endpoint summary constants for OpenAPI documentation.
+
+    This class provides brief, descriptive summaries for each API endpoint
+    that appear in the OpenAPI documentation. These summaries give users
+    a quick understanding of what each endpoint does.
+
+    Usage:
+        These constants are used in FastAPI route decorators to provide
+        consistent and professional API documentation.
+
+    Example:
+        ```python
+        from config.constants import Summaries
+        
+        @app.post("/messages", summary=Summaries.SUBMIT_MESSAGE)
+        async def submit_message():
+            pass
+        ```
+    """
     
     SUBMIT_MESSAGE: Final[str] = "Submit a message for processing"
     GET_UPDATES: Final[str] = "Get processing updates for a message"
@@ -95,7 +262,26 @@ class Summaries:
 
 
 class Descriptions:
-    """API endpoint description constants for OpenAPI documentation"""
+    """
+    API endpoint detailed description constants for OpenAPI documentation.
+
+    This class provides comprehensive descriptions for each API endpoint
+    that appear in the OpenAPI documentation. These descriptions give users
+    detailed information about endpoint behavior, parameters, and usage.
+
+    Usage:
+        These constants are used in FastAPI route decorators to provide
+        thorough documentation that helps developers understand and use the API.
+
+    Example:
+        ```python
+        from config.constants import Descriptions
+        
+        @app.post("/messages", description=Descriptions.SUBMIT_MESSAGE)
+        async def submit_message():
+            pass
+        ```
+    """
     
     SUBMIT_MESSAGE: Final[str] = "Submit a message that will be processed asynchronously in the background"
     GET_UPDATES: Final[str] = "Retrieve all processing updates for a specific message ID"
@@ -107,7 +293,27 @@ class Descriptions:
 
 
 class ContentTypes:
-    """HTTP content type constants"""
+    """
+    HTTP content type constants for request and response headers.
+
+    This class provides constants for commonly used MIME types in HTTP
+    communications. Using these constants ensures consistent content type
+    handling throughout the application.
+
+    Content Type Categories:
+        - JSON: application/json (most common for REST APIs)
+        - XML: application/xml
+        - HTML: text/html
+        - Plain text: text/plain
+        - Form data: application/x-www-form-urlencoded, multipart/form-data
+
+    Example:
+        ```python
+        from config.constants import ContentTypes
+        
+        response.headers["Content-Type"] = ContentTypes.JSON
+        ```
+    """
     
     JSON: Final[str] = "application/json"
     XML: Final[str] = "application/xml"
@@ -118,7 +324,26 @@ class ContentTypes:
 
 
 class HeaderNames:
-    """HTTP header name constants"""
+    """
+    HTTP header name constants for request and response handling.
+
+    This class provides constants for commonly used HTTP header names
+    to ensure consistent header handling and prevent typos in header
+    name strings throughout the application.
+
+    Header Categories:
+        - Content handling: Content-Type, Accept, Cache-Control
+        - Authentication: Authorization
+        - Client information: User-Agent
+        - Caching: ETag, Last-Modified, Cache-Control
+
+    Example:
+        ```python
+        from config.constants import HeaderNames
+        
+        auth_header = request.headers.get(HeaderNames.AUTHORIZATION)
+        ```
+    """
     
     CONTENT_TYPE: Final[str] = "Content-Type"
     AUTHORIZATION: Final[str] = "Authorization"
