@@ -9,29 +9,15 @@ and Semantic Kernel framework.
 import json
 from typing import Callable
 
-from pydantic import BaseModel
 from semantic_kernel import Kernel
 from semantic_kernel.agents import AgentThread, ChatHistoryAgentThread
 from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
 from semantic_kernel.connectors.mcp import MCPStreamableHttpPlugin
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 
-from agents.base import BaseAgent
+from agents.base import BaseAgent, AgentLLMResponse, AgentResponse
 from config.constants import MessageStatus
 from .config import Faq, Headers
-
-
-class FaqAgentResponse(BaseModel):
-    """
-    Response model for faq agent operations.
-    
-    Attributes:
-        reply: The agent's response message to the user
-        human_input_required: Whether additional human input is needed
-    """
-    reply: str
-    human_input_required: bool
-
 
 class FaqAgent(BaseAgent):
     """
@@ -58,7 +44,7 @@ class FaqAgent(BaseAgent):
             kernel: The Semantic Kernel instance for AI operations
         """
         settings = AzureChatPromptExecutionSettings()
-        settings.response_format = FaqAgentResponse
+        settings.response_format = AgentLLMResponse
         settings.temperature = 0.0
 
         super().__init__(
@@ -75,7 +61,7 @@ class FaqAgent(BaseAgent):
         thread_id: str,
         thread: ChatHistoryAgentThread,
         on_intermediate_response: Callable[..., None],
-    ) -> tuple[str, AgentThread, str]:
+    ) -> AgentResponse:
         """
         Process a faq-related message asynchronously.
         
@@ -123,10 +109,17 @@ class FaqAgent(BaseAgent):
             agent_name=self.name,
         )
 
-        _result: FaqAgentResponse = FaqAgentResponse.model_validate(
+        _llm_result: AgentLLMResponse = AgentLLMResponse.model_validate(
             json.loads(_response.message.content),
         )
+        _result = AgentResponse()
+        _result.reply = _llm_result.reply
+        _result.human_input_required = _llm_result.human_input_required
+        _result.able_to_serve = _llm_result.able_to_serve
+        _result.status = _llm_result.status
+        _result.thread = _response.thread
+        _result.agent_name = self.name
 
         await plugin.close()
 
-        return _result.reply, _response.thread, self.name
+        return _result

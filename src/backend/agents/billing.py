@@ -7,7 +7,7 @@ and Semantic Kernel framework.
 """
 
 import json
-from typing import Callable
+from typing import Callable, Final
 
 from pydantic import BaseModel
 from semantic_kernel import Kernel
@@ -16,22 +16,37 @@ from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettin
 from semantic_kernel.connectors.mcp import MCPStreamableHttpPlugin
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 
-from agents.base import BaseAgent
+from agents.base import BaseAgent, AgentResponse, AgentLLMResponse
 from config.constants import MessageStatus
-from agents.config import Billing, Headers
+from agents.config import Services, Headers
 
 
-class BillingAgentResponse(BaseModel):
+
+class Billing:
+    """Billing agent-specific configuration settings."""
+
+    # Agent identity
+    AGENT_NAME: Final[str] = "Billing"
+    PLUGIN_NAME: Final[str] = "BillingPlugin"
+    PLUGIN_DESCRIPTION: Final[str] = "A plugin for handling billing."
+
+    # Service endpoint
+    @classmethod
+    def get_mcp_endpoint(cls) -> str:
+        """Get the MCP endpoint for billing service."""
+        return Services.BILLING_MCP_SERVER_URL
+
+    # Agent template
+    AGENT_TEMPLATE: Final[
+        str
+    ] = """
+        You are the Billing Agent, responsible for managing billing-related tasks.
+        Your objective is to handle billing inquiries and provide accurate information.
+        Do not provide any personal or sensitive information.
+        If the billing data is not available, inform the user that you cannot access it.
+        Use a tabular format to present billing information clearly.
+        Ensure that you follow the provided instructions carefully.
     """
-    Response model for billing agent operations.
-    
-    Attributes:
-        reply: The agent's response message to the user
-        human_input_required: Whether additional human input is needed
-    """
-    reply: str
-    human_input_required: bool
-
 
 class BillingAgent(BaseAgent):
     """
@@ -58,7 +73,7 @@ class BillingAgent(BaseAgent):
             kernel: The Semantic Kernel instance for AI operations
         """
         settings = AzureChatPromptExecutionSettings()
-        settings.response_format = BillingAgentResponse
+        settings.response_format = AgentLLMResponse
         settings.temperature = 0.0
 
         super().__init__(  # type: ignore
@@ -75,7 +90,7 @@ class BillingAgent(BaseAgent):
         thread_id: str,
         thread: ChatHistoryAgentThread,
         on_intermediate_response: Callable[..., None],
-    ) -> tuple[str, AgentThread, str]:
+    ) -> AgentResponse:
         """
         Process a billing-related message asynchronously.
         
@@ -123,10 +138,16 @@ class BillingAgent(BaseAgent):
             agent_name=self.name,
         )
 
-        _result: BillingAgentResponse = BillingAgentResponse.model_validate(
+        _llm_result: AgentLLMResponse = AgentLLMResponse.model_validate(
             json.loads(_response.message.content),
         )
+        _result = AgentResponse()
+        _result.reply = _llm_result.reply
+        _result.human_input_required = _llm_result.human_input_required
+        _result.able_to_serve = _llm_result.able_to_serve
+        _result.thread = _response.thread
+        _result.agent_name = self.name
 
         await plugin.close()
 
-        return _result.reply, _response.thread, self.name
+        return _result

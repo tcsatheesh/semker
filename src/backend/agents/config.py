@@ -58,32 +58,6 @@ class Services:
         "https://cognitiveservices.azure.com/.default"
     )
 
-
-class Roaming:
-    """Roaming agent-specific configuration settings."""
-
-    # Agent identity
-    AGENT_NAME: Final[str] = "Roaming"
-    PLUGIN_NAME: Final[str] = "RoamingPlugin"
-    PLUGIN_DESCRIPTION: Final[str] = "A plugin for handling roaming."
-
-    # Service endpoint
-    @classmethod
-    def get_mcp_endpoint(cls) -> str:
-        """Get the MCP endpoint for roaming service."""
-        return Services.ROAMING_MCP_SERVER_URL
-
-    # Agent template
-    AGENT_TEMPLATE: Final[
-        str
-    ] = """
-        You are the Roaming Agent, responsible for managing roaming-related tasks.
-        Your objective is to handle roaming inquiries and provide accurate information.
-        Do not provide any personal or sensitive information.
-        Ensure that you follow the provided instructions carefully.
-    """
-
-
 class Faq:
     """Faq agent-specific configuration settings."""
 
@@ -107,102 +81,6 @@ class Faq:
         Do not provide any personal or sensitive information.
         Ensure that you follow the provided instructions carefully.
     """
-
-
-class Billing:
-    """Billing agent-specific configuration settings."""
-
-    # Agent identity
-    AGENT_NAME: Final[str] = "Billing"
-    PLUGIN_NAME: Final[str] = "BillingPlugin"
-    PLUGIN_DESCRIPTION: Final[str] = "A plugin for handling billing."
-
-    # Service endpoint
-    @classmethod
-    def get_mcp_endpoint(cls) -> str:
-        """Get the MCP endpoint for billing service."""
-        return Services.BILLING_MCP_SERVER_URL
-
-    # Agent template
-    AGENT_TEMPLATE: Final[
-        str
-    ] = """
-        You are the Billing Agent, responsible for managing billing-related tasks.
-        Your objective is to handle billing inquiries and provide accurate information.
-        Do not provide any personal or sensitive information.
-        If the billing data is not available, inform the user that you cannot access it.
-        Use a tabular format to present billing information clearly.
-        Ensure that you follow the provided instructions carefully.
-    """
-
-
-class Tariff:
-    """Tariff agent-specific configuration settings."""
-
-    # Agent identity
-    AGENT_NAME: Final[str] = "Tariff"
-    PLUGIN_NAME: Final[str] = "TariffPlugin"
-    PLUGIN_DESCRIPTION: Final[str] = "A plugin for handling tariffs."
-
-    # Service endpoint
-    @classmethod
-    def get_mcp_endpoint(cls) -> str:
-        """Get the MCP endpoint for tariffs service."""
-        return Services.TARIFF_MCP_SERVER_URL
-
-    # Agent template
-    AGENT_TEMPLATE: Final[
-        str
-    ] = """
-        You are the Tariff Agent, responsible for managing tariff-related tasks.
-        Your objective is to handle tariff inquiries and provide accurate information.
-        Do not provide any personal or sensitive information.
-        Provide tariff information is a tabular format.
-        When comparing tariffs, ensure you provide the most relevant and up-to-date information in a table format.
-        If the tariff data is not available, inform the user that you cannot access it.
-        Ensure that you follow the provided instructions carefully.
-    """
-
-
-class Planner:
-    """Planner agent-specific configuration settings."""
-
-    # Agent identity
-    AGENT_NAME: Final[str] = "Planner"
-
-    # Available agents for routing
-    AVAILABLE_AGENTS: Final[List[str]] = [
-        "Billing: Handles billing-related tasks.",
-        "Roaming: Manages roaming-related inquiries.",
-        "Tariff: Handles tariff-related inquiries.",
-        "Broadband: Manages broadband-support-related inquiries.",
-        "Ticketing: Handles raising tickets tasks."
-        "Faq: Provides answers to frequently asked questions.",
-    ]
-
-    # Agent template (raw template with placeholder)
-    _AGENT_TEMPLATE: Final[
-        str
-    ] = """
-        You are the Planner Agent, responsible for planning tasks.
-        You have access to the following agents:
-        {available_agents}
-        Select one of the agents based on the user message.
-        If you are unable to determine the appropriate agent, respond with a message indicating that you cannot assist.
-        Your objective is to provide a clear and concise response to the user.
-        Do not provide any personal or sensitive information.
-        Ensure that you follow the provided instructions carefully.
-    """
-
-    @classmethod
-    def get_agent_template(cls) -> str:
-        """Get the formatted planner agent template with available agents.
-
-        Returns:
-            Formatted template string with available agents list
-        """
-        agents_list = "\n        ".join(f"- {agent}" for agent in cls.AVAILABLE_AGENTS)
-        return cls._AGENT_TEMPLATE.format(available_agents=agents_list)
 
 
 class Headers:
