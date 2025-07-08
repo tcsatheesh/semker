@@ -5,8 +5,10 @@ description = "MCP Server with customer service tools"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "beautifulsoup4==4.13.4",
     "fastapi>=0.115.14",
     "mcp>=1.10.1",
     "opentelemetry-exporter-otlp-proto-grpc>=1.34.1",
     "opentelemetry-instrumentation-fastapi>=0.55b1",
+    "requests>=2.32.4",
 ]

@@ -43,3 +43,5 @@ tmp/
 temp/
 
 httpx.jsonl
+venv
+frontend2/

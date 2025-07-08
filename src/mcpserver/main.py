@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor # type: ignore[import-untyped]
 
 from telemetry import set_up_logging
-from tools import billing, broadband, roaming, ticket, tariff
+from tools import billing, broadband, roaming, ticket, tariff, faq
 
 set_up_logging()
 
@@ -48,6 +48,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await stack.enter_async_context(tariff.mcp.session_manager.run())
         await stack.enter_async_context(broadband.mcp.session_manager.run())
         await stack.enter_async_context(ticket.mcp.session_manager.run())
+        await stack.enter_async_context(faq.mcp.session_manager.run())
         yield
 
 
@@ -66,6 +67,7 @@ This server provides multiple AI-powered tools for telecommunications and custom
 * **Tariff Tool** (`/tariff/mcp`) - Access tariff plans and pricing structures
 * **Broadband Tool** (`/broadband/mcp`) - Troubleshooting steps for router models
 * **Ticket Tool** (`/ticket/mcp`) - Support ticket management with chat history
+* **FAQ Tool** (`/faq/mcp`) - Retrieve frequently asked questions (FAQ)
 
 ### Features
 
@@ -112,6 +114,10 @@ For detailed API documentation, see the individual endpoint sections below.
             "name": "ticket",
             "description": "Support ticket creation and customer service management",
         },
+        {
+            "name": "faq",
+            "description": "Support answering frequently asked questions (FAQ)",
+        },
     ],
     lifespan=lifespan,
     docs_url="/docs",
@@ -146,6 +152,11 @@ app.mount(
     "/ticket", 
     ticket.mcp.streamable_http_app(),
     name="ticket"
+)
+app.mount(
+    "/faq", 
+    faq.mcp.streamable_http_app(),
+    name="faq"
 )
 
 # Add a root endpoint that redirects to docs
