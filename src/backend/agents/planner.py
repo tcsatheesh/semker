@@ -7,7 +7,7 @@ agent (Billing, Roaming, Broadband, Ticketing, etc.) based on the content.
 """
 
 import json
-from typing import Callable, Optional, cast, Final, List
+from typing import Callable, Optional, cast, Final, List, Dict
 
 from pydantic import BaseModel
 from semantic_kernel import Kernel
@@ -26,13 +26,11 @@ class Planner:
     AGENT_NAME: Final[str] = "Planner"
 
     # Available agents for routing
-    AVAILABLE_AGENTS: Final[List[str]] = [
-        "Billing: Handles billing-related tasks.",
-        "Roaming: Manages roaming-related inquiries.",
-        "Tariff: Handles tariff-related inquiries.",
-        "Broadband: Manages broadband-support-related inquiries.",
-        "Ticketing: Handles raising tickets tasks."
-        "Faq: Provides answers to frequently asked questions.",
+    AVAILABLE_AGENTS: Final[List[Dict[str, str]]] = [
+        {"Billing": "Handles billing-related tasks."},
+        {"Roaming": "Manages roaming-related inquiries."},
+        {"Tariff": "Handles tariff-related inquiries."},
+        {"Faq": "Provides answers to frequently asked questions."},
     ]
 
     # Agent template (raw template with placeholder)
@@ -187,14 +185,12 @@ class PlannerAgent(BaseAgent):
                 result=f"Planner agent routing to {_result.agent_name} agent.",
                 agent_name=self.name,
             )
-            _inner_response = (
-                await _agent.process_message_async(
-                    message=message,
-                    message_id=message_id,
-                    thread_id=thread_id,
-                    thread=_thread,
-                    on_intermediate_response=on_intermediate_response,
-                )
+            _inner_response = await _agent.process_message_async(
+                message=message,
+                message_id=message_id,
+                thread_id=thread_id,
+                thread=_thread,
+                on_intermediate_response=on_intermediate_response,
             )
             # if _inner_response.able_to_serve is False:
             #     on_intermediate_response(
@@ -218,8 +214,11 @@ class PlannerAgent(BaseAgent):
             #         self.name,
             #     )
 
-
-            return _inner_response.reply, _inner_response.thread, _inner_response.agent_name
+            return (
+                _inner_response.reply,
+                _inner_response.thread,
+                _inner_response.agent_name,
+            )
 
         else:
             return _result.reply, _response.thread, self.name
