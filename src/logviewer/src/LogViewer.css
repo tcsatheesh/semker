@@ -308,6 +308,9 @@ html[data-theme="dark"] {
   box-shadow: 0 2px 4px var(--shadow);
   overflow: hidden;
   min-height: 0;
+  min-width: 0;
+  max-width: 50%;
+  width: 50%;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -349,6 +352,23 @@ html[data-theme="dark"] {
   padding: 1.5rem;
   background-color: var(--bg-secondary);
   transition: background-color 0.3s ease;
+  width: 100%;
+  max-width: 100%;
+}
+
+.details-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.details-content code {
+  max-width: 100%;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
 }
 
 .details-content::-webkit-scrollbar {
@@ -399,6 +419,40 @@ html[data-theme="dark"] {
   border-radius: 8px;
   margin: 1rem;
   transition: all 0.3s ease;
+}
+
+/* Force text wrapping in syntax highlighter */
+.details-content .hljs,
+.details-content pre[class*="language-"] {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.details-content .hljs code,
+.details-content pre[class*="language-"] code {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100%;
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+}
+
+/* Target specific syntax highlighter elements */
+.details-content .token.string,
+.details-content .token.property,
+.details-content .token.key {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
 }
 
 /* Responsive Design */

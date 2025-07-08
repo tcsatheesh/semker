@@ -238,9 +238,18 @@ const LogViewer: React.FC<LogViewerProps> = ({ darkMode }) => {
                         borderRadius: '8px',
                         border: '1px solid var(--border-color)',
                         fontSize: '0.9rem',
-                        lineHeight: '1.4'
+                        lineHeight: '1.4',
+                        maxWidth: '100%',
+                        overflowX: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word'
                       }}
                       wrapLongLines={true}
+                      wrapLines={true}
+                      lineProps={{
+                        style: { wordBreak: 'break-all', whiteSpace: 'pre-wrap' }
+                      }}
                     >
                       {JSON.stringify(sanitizeRequest(selectedLog.message?.Request) || {}, null, 2)}
                     </SyntaxHighlighter>
@@ -267,9 +276,18 @@ const LogViewer: React.FC<LogViewerProps> = ({ darkMode }) => {
                         borderRadius: '8px',
                         border: '1px solid var(--border-color)',
                         fontSize: '0.9rem',
-                        lineHeight: '1.4'
+                        lineHeight: '1.4',
+                        maxWidth: '100%',
+                        overflowX: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word'
                       }}
                       wrapLongLines={true}
+                      wrapLines={true}
+                      lineProps={{
+                        style: { wordBreak: 'break-all', whiteSpace: 'pre-wrap' }
+                      }}
                     >
                       {JSON.stringify(selectedLog.message?.Response || {}, null, 2)}
                     </SyntaxHighlighter>
