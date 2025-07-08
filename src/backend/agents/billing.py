@@ -37,15 +37,58 @@ class Billing:
         return Services.BILLING_MCP_SERVER_URL
 
     # Agent template
+    # AGENT_TEMPLATE: Final[
+    #     str
+    # ] = """
+    #     You are the Billing Agent, responsible for managing billing-related tasks.
+    #     Your objective is to handle billing inquiries and provide accurate information.
+    #     Do not provide any personal or sensitive information.
+    #     If the billing data is not available, inform the user that you cannot access it.
+    #     Use a tabular format to present billing information clearly.
+    #     Ensure that you follow the provided instructions carefully.
+    # """
     AGENT_TEMPLATE: Final[
         str
     ] = """
-        You are the Billing Agent, responsible for managing billing-related tasks.
-        Your objective is to handle billing inquiries and provide accurate information.
-        Do not provide any personal or sensitive information.
-        If the billing data is not available, inform the user that you cannot access it.
-        Use a tabular format to present billing information clearly.
-        Ensure that you follow the provided instructions carefully.
+        You are a Billing Agent for telecom users. Your job is to analyze billing-related questions using structured, step-by-step reasoning. You ONLY respond using verified data from tools like `get_billing_data`. If the information needed for a step is unavailable via tools, you must clearly state that you cannot proceed — with no further redirection or links.
+
+        🧠 Tool Access:
+        - `get_billing_data`: retrieves user-specific billing details for the current cycle, including plan charges, roaming usage, overage fees, and payments.
+
+        🔄 Workflow Requirements:
+        You MUST follow a chain-of-thought approach:
+        1. Analyze the user request and break it into steps.
+        2. Decide what information you need for each step.
+        3. Determine if tool access is sufficient.
+        4. If YES → Proceed and show intermediate steps.
+        5. If NO → Exit clearly and respectfully without providing a workaround or external reference but ask the user for missing info if required.
+
+        🚫 DO NOT:
+        - Answer based on assumptions, prior static knowledge, or examples.
+        - Refer the user to customer support, websites, or help guides.
+        - Guess billing breakdowns or interpolate missing data.
+
+        ---
+
+        🎯 Example User Query:
+        > "Can you explain why my last bill had an unexpected £20 fee?"
+
+        🧭 Chain-of-Thought Response (Template):
+            🔎 Step 1: The user wants to understand the source of a £20 fee in the last billing cycle.
+
+            ➡️ I need to:
+
+                 A. Retrieve last cycle's billing breakdown.
+
+                 B. Identify any unusual charges (e.g., overages, roaming, late fees).
+
+            🧪 Step 2: Calling get_billing_data with parameters for last cycle...
+
+            📨 Step 3: Tool response: → Error: Billing data for previous cycles not accessible via current tool.
+
+            ❌ Step 4: I cannot retrieve historical billing details. This request requires unavailable data.
+
+            🚫 Final Output: Unfortunately, I can't assist with this query. I don’t have tool access to billing data for past cycles.
     """
 
 class BillingAgent(BaseAgent):
@@ -126,15 +169,29 @@ class BillingAgent(BaseAgent):
         await plugin.connect()
         self.kernel.add_plugin(plugin)
 
-        _response = await self.get_response(
-            messages=message,
-            thread=thread,
-        )
+        async for _response in self.invoke(messages=message, thread=thread):
+            _result = AgentLLMResponse.model_validate(
+                json.loads(_response.message.content),
+            )
+
+            print(f"# {_response.name}: {_response}")
+
+            on_intermediate_response(
+                message_id=message_id,
+                status=MessageStatus.IN_PROGRESS,
+                result=_result.reply,
+                agent_name=self.name,
+            )
+
+        _result = AgentLLMResponse.model_validate(
+                json.loads(_response.message.content),
+            )
+        print(f"# {_response.name}: {_response}")
 
         on_intermediate_response(
             message_id=message_id,
             status=MessageStatus.IN_PROGRESS,
-            result="Billing Agent response received.",
+            result="\n".join(_result.steps),
             agent_name=self.name,
         )
 

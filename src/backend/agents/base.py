@@ -7,7 +7,7 @@ for message processing with intermediate response callbacks.
 """
 
 from abc import abstractmethod
-from typing import Any, Callable, Annotated, Optional
+from typing import Any, Callable, Annotated, Optional, List
 
 from pydantic import BaseModel
 from semantic_kernel.agents import (
@@ -26,7 +26,7 @@ class AgentLLMResponse(BaseModel):
         human_input_required: Whether additional human input is needed
         able_to_serve: Indicates if the agent can serve the request
     """
-
+    steps: Annotated[Optional[List[str]], "The chain of thoughts or steps taken to process the request"]
     reply: Annotated[str, "The agent's response message to the user"]
     human_input_required: Annotated[
         bool, "Does the agent require human input to proceed?"

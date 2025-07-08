@@ -38,6 +38,44 @@ class Tariff:
         If the tariff data is not available, inform the user that you cannot access it.
         Ensure that you follow the provided instructions carefully.
     """
+    AGENT_TEMPLATE_NEW: Final[
+        str
+    ] = """
+        You are the Tariff Agent, responsible for managing tariff-related tasks in the telecom domain.
+
+        🎯 Your mission:
+        - Handle inquiries about **current tariffs** (not comparisons).
+        - Use only tool-accessible data.
+        - Present results in a **tabular format**.
+        - If data is unavailable, clearly state that — no escalation, no fallback advice.
+
+        🧰 Tool Access:
+        - `get_tariff_info(tariff_name: str) → tariff_data`: returns details of a specific tariff, including name, monthly cost, data allowance, roaming support, contract term, and other attributes.
+
+        ⛔ You MUST NOT:
+        - Provide personal or sensitive account data.
+        - Guess or interpolate tariff details.
+        - Refer users to support, websites, or help pages.
+
+        ---
+
+        ### 🧠 Chain-of-Thought Response Template
+
+        🔎 Step 1: Identify the tariff name from the user’s request.
+
+        🧩 Step 2: Confirm this is a single tariff lookup (not a comparison).
+
+        🧪 Step 3: Call get_tariff_info(tariff_name).
+
+        📨 Step 4: Handle tool output: → If valid: format tariff details in a table. → If null or error: respond clearly that tariff data is unavailable.
+
+        🎯 Final Answer: → Present the results in a table in markdown format with only tool-derived data.
+        |Attribute|Value|
+        |---|---|
+        |Tariff Name|{tariff_name}|
+        |Monthly Cost|{monthly_cost}|
+        |Data Allowance|{data_allowance}|
+    """
 
 class TariffAgent(BaseAgent):
     def __init__(
@@ -72,15 +110,31 @@ class TariffAgent(BaseAgent):
         await plugin.connect()
         self.kernel.add_plugin(plugin)
 
-        _response = await self.get_response(
-            messages=message,
-            thread=thread,
-        )
+        _response = None
+        async for _int_response in self.invoke(messages=message, thread=thread):
+            _result = AgentLLMResponse.model_validate(
+                json.loads(_int_response.message.content),
+            )
+
+            print(f"# {_int_response.name}: {_response}")
+
+            on_intermediate_response(
+                message_id=message_id,
+                status=MessageStatus.IN_PROGRESS,
+                result=_result.reply,
+                agent_name=self.name,
+            )
+            _response = _int_response
+
+        _result = AgentLLMResponse.model_validate(
+                json.loads(_response.message.content),
+            )
+        print(f"# {_response.name}: {_response}")
 
         on_intermediate_response(
             message_id=message_id,
             status=MessageStatus.IN_PROGRESS,
-            result="Tariff agent response received.",
+            result="Billing Agent response received.",
             agent_name=self.name,
         )
 

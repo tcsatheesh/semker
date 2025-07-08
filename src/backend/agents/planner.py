@@ -34,17 +34,43 @@ class Planner:
     ]
 
     # Agent template (raw template with placeholder)
+    # _AGENT_TEMPLATE: Final[
+    #     str
+    # ] = """
+    #     You are the Planner Agent, responsible for planning tasks.
+    #     You have access to the following agents:
+    #     {available_agents}
+    #     Select one of the agents based on the user message.
+    #     If you are unable to determine the appropriate agent, respond with a message indicating that you cannot assist.
+    #     Your objective is to provide a clear and concise response to the user.
+    #     Do not provide any personal or sensitive information.
+    #     Show your reasoning. Explain your thought process before answering.
+    #     Ensure that you follow the provided instructions carefully.
+    # """
+
     _AGENT_TEMPLATE: Final[
         str
     ] = """
-        You are the Planner Agent, responsible for planning tasks.
-        You have access to the following agents:
-        {available_agents}
-        Select one of the agents based on the user message.
-        If you are unable to determine the appropriate agent, respond with a message indicating that you cannot assist.
-        Your objective is to provide a clear and concise response to the user.
-        Do not provide any personal or sensitive information.
-        Ensure that you follow the provided instructions carefully.
+    You are a Planner Agent that orchestrates specialized sub-agents to complete complex tasks across domains (e.g., Telecom, AI orchestration, music theory, etc.). You must:
+
+    List of Available Agents:
+    {available_agents}
+
+    1. Break down the user’s request into stepwise components.
+    2. Show your thought process (“chain of thought”) progressively before executing subtasks.
+    3. Share intermediate updates after each planning step.
+    4. Invoke sub-agents only when necessary.
+    5. Deliver a final synthesized response only after all relevant steps are completed.
+
+    🧩 Key Behavior Rules:
+    - You MUST show reasoning before action.
+    - You MUST share progress updates before delivering the final answer.
+    - You MAY only use sub-agents when they are needed to complete a step.
+    - You MAY reuse results from previous steps if helpful.
+    - You MUST produce a final answer summarizing all delegated subtasks and decisions.
+
+    🎯 Prompt Template Logic:
+
     """
 
     @classmethod
@@ -145,16 +171,21 @@ class PlannerAgent(BaseAgent):
             thread=thread,
         )
 
-        _result = PlannerAgentResponse.model_validate(
-            json.loads(_response.message.content),
-        )
+        async for _response in self.invoke(messages=message, thread=thread):
+            _result = PlannerAgentResponse.model_validate(
+                json.loads(_response.message.content),
+            )
 
-        on_intermediate_response(
-            message_id=message_id,
-            status=MessageStatus.IN_PROGRESS,
-            result="Planner agent response received.",
-            agent_name=self.name,
-        )
+            on_intermediate_response(
+                message_id=message_id,
+                status=MessageStatus.IN_PROGRESS,
+                result=_result.reply,
+                agent_name=self.name,
+            )
+
+        _result = PlannerAgentResponse.model_validate(
+                json.loads(_response.message.content),
+            )
 
         _agent: Optional[BaseAgent] = None
         if _result.agent_name == "Billing":
@@ -182,7 +213,7 @@ class PlannerAgent(BaseAgent):
             on_intermediate_response(
                 message_id=message_id,
                 status=MessageStatus.IN_PROGRESS,
-                result=f"Planner agent routing to {_result.agent_name} agent.",
+                result=_result.reply,
                 agent_name=self.name,
             )
             _inner_response = await _agent.process_message_async(

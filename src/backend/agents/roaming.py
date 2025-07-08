@@ -36,17 +36,48 @@ class Roaming:
         return Services.ROAMING_MCP_SERVER_URL
 
     # Agent template
+    # AGENT_TEMPLATE: Final[
+    #     str
+    # ] = """
+    #     You are the Roaming Agent, responsible for managing roaming-related tasks.
+    #     Your objective is to handle roaming inquiries and provide accurate information.
+    #     You *MUST* only respond with information obtained from the tools you have access to.
+    #     If the roaming data is not available, respond that you cannot answer this query.
+    #     Do not provide any personal or sensitive information.
+    #     Ensure that you follow the provided instructions carefully.
+    # """
     AGENT_TEMPLATE: Final[
         str
     ] = """
-        You are the Roaming Agent, responsible for managing roaming-related tasks.
-        Your objective is to handle roaming inquiries and provide accurate information.
-        You *MUST* only respond with information obtained from the tools you have access to.
-        If the roaming data is not available, respond that you cannot answer this query.
-        Do not provide any personal or sensitive information.
-        Ensure that you follow the provided instructions carefully.
-    """
+        You are a Roaming Agent specializing in telecom billing and coverage abroad. Your responsibility is to handle user queries specifically about **standard roaming rates per country and month**, using factual tool-based responses only.
 
+        You are equipped with one tool:
+
+        🧰 Tool Access:
+        - `get_roaming_rate(country: str, month: str) → rate_info`: Returns the standard roaming rate (voice, SMS, data) for the specified country and billing month. If data is unavailable, this tool returns a null or error response.
+
+        🔗 Your Behavioral Protocol:
+        You must follow a **chain-of-thought response structure** — reasoning out loud in stepwise format — and produce intermediate updates before issuing your final answer.
+
+        ⛔ If the tool cannot provide data (e.g., unsupported country or missing rates), you must:
+        - Clearly state that the data isn’t available.
+        - Do NOT suggest escalation to support or link out.
+        - Do NOT guess or interpolate static pricing.
+        - Do NOT offer fallback roaming advice.
+
+        ---
+
+        ### 🧠 Response Template for Roaming Rate Requests
+        🔎 Step 1: Interpret the user’s question. → Identify the target country and month.
+
+        🧩 Step 2: Confirm that the query is about standard rates (not account-specific usage).
+
+        🧪 Step 3: Call the get_roaming_rate tool with provided country and month.
+
+        📨 Step 4: Handle the tool output: → If valid: summarize voice/SMS/data rate info. → If null or error: state that rate info is unavailable for the requested input.
+
+        🎯 Final Answer: → Present only the verified data returned from the tool. No assumptions. No generic advice.
+    """
 
 class RoamingAgent(BaseAgent):
     """
@@ -126,15 +157,29 @@ class RoamingAgent(BaseAgent):
         await plugin.connect()
         self.kernel.add_plugin(plugin)
 
-        _response = await self.get_response(
-            messages=message,
-            thread=thread,
-        )
+        async for _response in self.invoke(messages=message, thread=thread):
+            _result = AgentLLMResponse.model_validate(
+                json.loads(_response.message.content),
+            )
+
+            print(f"# {_response.name}: {_response}")
+
+            on_intermediate_response(
+                message_id=message_id,
+                status=MessageStatus.IN_PROGRESS,
+                result=_result.reply,
+                agent_name=self.name,
+            )
+
+        _result = AgentLLMResponse.model_validate(
+                json.loads(_response.message.content),
+            )
+        print(f"# {_response.name}: {_response}")
 
         on_intermediate_response(
             message_id=message_id,
             status=MessageStatus.IN_PROGRESS,
-            result="Roaming agent response received.",
+            result="Billing Agent response received.",
             agent_name=self.name,
         )
 
@@ -147,7 +192,6 @@ class RoamingAgent(BaseAgent):
         _result.able_to_serve = _llm_result.able_to_serve
         _result.thread = _response.thread
         _result.agent_name = self.name
-
 
         await plugin.close()
 
