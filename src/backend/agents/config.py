@@ -58,31 +58,6 @@ class Services:
         "https://cognitiveservices.azure.com/.default"
     )
 
-class Faq:
-    """Faq agent-specific configuration settings."""
-
-    # Agent identity
-    AGENT_NAME: Final[str] = "FAQ"
-    PLUGIN_NAME: Final[str] = "FaqPlugin"
-    PLUGIN_DESCRIPTION: Final[str] = "A plugin for handling frequently asked questions."
-
-    # Service endpoint
-    @classmethod
-    def get_mcp_endpoint(cls) -> str:
-        """Get the MCP endpoint for faq service."""
-        return Services.FAQ_MCP_SERVER_URL
-
-    # Agent template
-    AGENT_TEMPLATE: Final[
-        str
-    ] = """
-        You are the Faq Agent, responsible for answering frequently asked questions.
-        Your objective is to handle faq inquiries and provide accurate information.
-        Do not provide any personal or sensitive information.
-        Ensure that you follow the provided instructions carefully.
-    """
-
-
 class Headers:
     """Helper class for generating agent headers."""
 
