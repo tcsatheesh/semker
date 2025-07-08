@@ -77,6 +77,8 @@ class Roaming:
         📨 Step 4: Handle the tool output: → If valid: summarize voice/SMS/data rate info. → If null or error: state that rate info is unavailable for the requested input.
 
         🎯 Final Answer: → Present only the verified data returned from the tool. No assumptions. No generic advice.
+        → Present response in a concise, well-structured format, using stepwise explanation when helpful.
+        → All roaming information should be presented in a table format and MUST be preceeded by briefly describing what the table contains, with clear headings for each column.
     """
 
 class RoamingAgent(BaseAgent):
@@ -161,27 +163,16 @@ class RoamingAgent(BaseAgent):
             _result = AgentLLMResponse.model_validate(
                 json.loads(_response.message.content),
             )
-
-            print(f"# {_response.name}: {_response}")
-
             on_intermediate_response(
                 message_id=message_id,
                 status=MessageStatus.IN_PROGRESS,
-                result=_result.reply,
+                result="\n".join(_result.steps),
                 agent_name=self.name,
             )
 
         _result = AgentLLMResponse.model_validate(
                 json.loads(_response.message.content),
             )
-        print(f"# {_response.name}: {_response}")
-
-        on_intermediate_response(
-            message_id=message_id,
-            status=MessageStatus.IN_PROGRESS,
-            result="Billing Agent response received.",
-            agent_name=self.name,
-        )
 
         _llm_result: AgentLLMResponse = AgentLLMResponse.model_validate(
             json.loads(_response.message.content),

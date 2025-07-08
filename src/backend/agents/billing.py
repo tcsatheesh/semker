@@ -89,6 +89,9 @@ class Billing:
             ❌ Step 4: I cannot retrieve historical billing details. This request requires unavailable data.
 
             🚫 Final Output: Unfortunately, I can't assist with this query. I don’t have tool access to billing data for past cycles.
+            → Present response in a concise, well-structured format, using stepwise explanation when helpful.
+            → All billing information should be presented in a table format and MUST be preceeded by briefly describing what the table contains, with clear headings for each column.
+            
     """
 
 class BillingAgent(BaseAgent):
@@ -173,27 +176,16 @@ class BillingAgent(BaseAgent):
             _result = AgentLLMResponse.model_validate(
                 json.loads(_response.message.content),
             )
-
-            print(f"# {_response.name}: {_response}")
-
             on_intermediate_response(
                 message_id=message_id,
                 status=MessageStatus.IN_PROGRESS,
-                result=_result.reply,
+                result="\n".join(_result.steps),
                 agent_name=self.name,
             )
 
         _result = AgentLLMResponse.model_validate(
                 json.loads(_response.message.content),
             )
-        print(f"# {_response.name}: {_response}")
-
-        on_intermediate_response(
-            message_id=message_id,
-            status=MessageStatus.IN_PROGRESS,
-            result="\n".join(_result.steps),
-            agent_name=self.name,
-        )
 
         _llm_result: AgentLLMResponse = AgentLLMResponse.model_validate(
             json.loads(_response.message.content),

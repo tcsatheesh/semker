@@ -3,6 +3,7 @@ Roaming data access and business logic.
 
 This module contains the data and functions for managing roaming charges.
 """
+from datetime import datetime
 
 from .schemas import Charges, RoamingCharges
 
@@ -10,7 +11,7 @@ from .schemas import Charges, RoamingCharges
 _roaming_data = RoamingCharges(
     roams=[
         Charges(
-            month=11,
+            month=datetime.now().month - 1,
             details={
                 "Romania": {
                     "Amount": 1.0,
@@ -33,7 +34,7 @@ _roaming_data = RoamingCharges(
             },
         ),
         Charges(
-            month=10,
+            month=datetime.now().month - 2,
             details={
                 "Romania": {
                     "Amount": 1.0,
@@ -56,7 +57,30 @@ _roaming_data = RoamingCharges(
             },
         ),
         Charges(
-            month=9,
+            month=datetime.now().month - 3,
+            details={
+                "Romania": {
+                    "Amount": 1.0,
+                    "Unit": "GB",
+                    "Cost": 1.99,
+                    "Currency": "EUR",
+                },
+                "Spain": {
+                    "Capacity": 3.0,
+                    "Unit": "GB",
+                    "Cost": 5.99,
+                    "Currency": "EUR",
+                },
+                "Belgium": {
+                    "Capacity": 2.0,
+                    "Unit": "GB",
+                    "Cost": 4.99,
+                    "Currency": "EUR",
+                },
+            },
+        ),
+        Charges(
+            month=datetime.now().month - 4,
             details={
                 "Romania": {
                     "Amount": 1.0,

@@ -27,18 +27,18 @@ class Tariff:
         return Services.TARIFF_MCP_SERVER_URL
 
     # Agent template
+    # AGENT_TEMPLATE: Final[
+    #     str
+    # ] = """
+    #     You are the Tariff Agent, responsible for managing tariff-related tasks.
+    #     Your objective is to handle tariff inquiries and provide accurate information.
+    #     Do not provide any personal or sensitive information.
+    #     Provide tariff information is a tabular format.
+    #     When comparing tariffs, ensure you provide the most relevant and up-to-date information in a table format.
+    #     If the tariff data is not available, inform the user that you cannot access it.
+    #     Ensure that you follow the provided instructions carefully.
+    # """
     AGENT_TEMPLATE: Final[
-        str
-    ] = """
-        You are the Tariff Agent, responsible for managing tariff-related tasks.
-        Your objective is to handle tariff inquiries and provide accurate information.
-        Do not provide any personal or sensitive information.
-        Provide tariff information is a tabular format.
-        When comparing tariffs, ensure you provide the most relevant and up-to-date information in a table format.
-        If the tariff data is not available, inform the user that you cannot access it.
-        Ensure that you follow the provided instructions carefully.
-    """
-    AGENT_TEMPLATE_NEW: Final[
         str
     ] = """
         You are the Tariff Agent, responsible for managing tariff-related tasks in the telecom domain.
@@ -59,22 +59,28 @@ class Tariff:
 
         ---
 
-        ### 🧠 Chain-of-Thought Response Template
+        🧠 Chain-of-Thought Approach (Mandatory):
+        You MUST respond using this step-by-step format:
 
-        🔎 Step 1: Identify the tariff name from the user’s request.
+        🔎 Step 1: Analyze the user query.
+        → Break it into components and identify whether it’s a general FAQ.
 
-        🧩 Step 2: Confirm this is a single tariff lookup (not a comparison).
+        🧩 Step 2: Decide what information is required.
+        → Identify conceptual, procedural, or policy-level data needed to respond.
 
-        🧪 Step 3: Call get_tariff_info(tariff_name).
+        🧪 Step 3: Determine whether tool access is required.
+        → If YES → Exit cleanly. Tool use is NOT permitted.
+        → If NO → Proceed with static explanation.
 
-        📨 Step 4: Handle tool output: → If valid: format tariff details in a table. → If null or error: respond clearly that tariff data is unavailable.
+        📨 Step 4: Respond clearly and accurately.
+        → Use domain knowledge only.
+        → Do NOT guess or interpolate data.
+        → Do NOT reference tools, help pages, or customer support.
 
-        🎯 Final Answer: → Present the results in a table in markdown format with only tool-derived data.
-        |Attribute|Value|
-        |---|---|
-        |Tariff Name|{tariff_name}|
-        |Monthly Cost|{monthly_cost}|
-        |Data Allowance|{data_allowance}|
+        🎯 Final Answer:
+        → Present response in a concise, well-structured format, using stepwise explanation when helpful.
+        → All tariff information should be presented in a table format and MUST be preceeded by briefly describing what the table contains, with clear headings for each column.
+
     """
 
 class TariffAgent(BaseAgent):
@@ -110,33 +116,20 @@ class TariffAgent(BaseAgent):
         await plugin.connect()
         self.kernel.add_plugin(plugin)
 
-        _response = None
-        async for _int_response in self.invoke(messages=message, thread=thread):
+        async for _response in self.invoke(messages=message, thread=thread):
             _result = AgentLLMResponse.model_validate(
-                json.loads(_int_response.message.content),
+                json.loads(_response.message.content),
             )
-
-            print(f"# {_int_response.name}: {_response}")
-
             on_intermediate_response(
                 message_id=message_id,
                 status=MessageStatus.IN_PROGRESS,
-                result=_result.reply,
+                result="\n".join(_result.steps),
                 agent_name=self.name,
             )
-            _response = _int_response
 
         _result = AgentLLMResponse.model_validate(
                 json.loads(_response.message.content),
             )
-        print(f"# {_response.name}: {_response}")
-
-        on_intermediate_response(
-            message_id=message_id,
-            status=MessageStatus.IN_PROGRESS,
-            result="Billing Agent response received.",
-            agent_name=self.name,
-        )
 
         _llm_result: AgentLLMResponse = AgentLLMResponse.model_validate(
             json.loads(_response.message.content),

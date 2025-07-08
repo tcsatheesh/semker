@@ -99,8 +99,7 @@ const MainContent: React.FC = () => {
     if (activePolling.has(messageId)) return;
 
     setActivePolling(prev => new Set(prev).add(messageId));
-    let lastStatus = '';
-    let lastResult = '';
+    let processedUpdateCount = 0; // Track how many updates we've processed
 
     const poll = async () => {
       try {
@@ -109,92 +108,79 @@ const MainContent: React.FC = () => {
         const duration = currentTime - startTime;
 
         if (updates && updates.length > 0) {
-          const latestUpdate = updates[updates.length - 1];
+          // Process any new updates that haven't been shown yet
+          const newUpdates = updates.slice(processedUpdateCount);
           
-          // Check if status or result has changed from the last poll
-          const statusChanged = latestUpdate.status !== lastStatus;
-          const resultChanged = latestUpdate.result !== lastResult;
-          
-          if (statusChanged || resultChanged) {
-            // Update our tracking variables
-            lastStatus = latestUpdate.status;
-            lastResult = latestUpdate.result;
+          if (newUpdates.length > 0) {
+            // Check if there's a completed update to compare against
+            const completedUpdate = updates.find(u => u.status === 'completed');
             
-            // Only add intermediate message if not in a completion state
-            // Completion states will be handled by the final message logic below
-            if (latestUpdate.status !== 'completed' && latestUpdate.status !== 'failed') {
-              // Only create intermediate message if there's actual result content
-              if (latestUpdate.result && latestUpdate.result.trim()) {
-                // Create appropriate message text based on status
-                let messageText = '';
-                if (latestUpdate.status === 'received') {
-                  messageText = `✅ ${latestUpdate.result}`;
-                } else if (latestUpdate.status === 'inprogress') {
-                  messageText = `⚡ ${latestUpdate.result}`;
-                } else {
-                  messageText = `${latestUpdate.result}`;
-                }
-                
-                // Add intermediate status message
-                const intermediateMessage: ChatMessage = {
-                  id: `intermediate-${messageId}-${Date.now()}`,
-                  text: messageText,
-                  timestamp: new Date(),
-                  isUser: false,
-                  status: latestUpdate.status,
-                  duration,
-                  isIntermediate: true,
-                  messageId,
-                  agentName: latestUpdate.agent_name
-                };
-
-                setChatMessages(prev => {
-                  // Check if we already have this exact intermediate message content
-                  const hasSameContent = prev.some(msg => 
-                    msg.isIntermediate && 
-                    msg.messageId === messageId && 
-                    msg.text === messageText
-                  );
-                  
-                  // Only add if we don't already have the same content
-                  if (!hasSameContent) {
-                    return [...prev, intermediateMessage];
+            // Process each new update
+            for (const update of newUpdates) {
+              // Only add intermediate message if not in a completion state
+              if (update.status !== 'completed' && update.status !== 'failed') {
+                // Only create intermediate message if there's actual result content
+                if (update.result && update.result.trim()) {
+                  // Skip inprogress messages that are identical to the completed result
+                  if (update.status === 'inprogress' && completedUpdate && 
+                      update.result.trim() === completedUpdate.result?.trim()) {
+                    console.log('Skipping inprogress message identical to completed result');
+                    processedUpdateCount++;
+                    continue;
                   }
                   
-                  // If same content exists, just update the duration of the most recent one
-                  return prev.map(msg => {
-                    if (msg.isIntermediate && msg.messageId === messageId && msg.text === messageText) {
-                      const intermediateMessages = prev.filter(m => 
-                        m.isIntermediate && m.messageId === messageId && m.text === messageText
-                      );
-                      const mostRecent = intermediateMessages[intermediateMessages.length - 1];
-                      if (msg.id === mostRecent.id) {
-                        return { ...msg, duration };
-                      }
+                  // Create appropriate message text based on status
+                  let messageText = '';
+                  if (update.status === 'received') {
+                    messageText = `✅ ${update.result}`;
+                  } else if (update.status === 'inprogress') {
+                    messageText = `⚡ ${update.result}`;
+                  } else {
+                    messageText = `${update.result}`;
+                  }
+                  
+                  // Add intermediate status message
+                  const intermediateMessage: ChatMessage = {
+                    id: `intermediate-${messageId}-${processedUpdateCount}`,
+                    text: messageText,
+                    timestamp: new Date(update.processed_at),
+                    isUser: false,
+                    status: update.status,
+                    duration,
+                    isIntermediate: true,
+                    messageId,
+                    agentName: update.agent_name
+                  };
+
+                  setChatMessages(prev => {
+                    // Check if we already have this exact intermediate message
+                    const hasExactMessage = prev.some(msg => 
+                      msg.id === intermediateMessage.id
+                    );
+                    
+                    // Only add if we don't already have this exact message
+                    if (!hasExactMessage) {
+                      return [...prev, intermediateMessage];
                     }
-                    return msg;
+                    
+                    return prev;
                   });
-                });
+                }
               }
+              processedUpdateCount++;
             }
           } else {
-            // Only duration has changed, update the most recent intermediate message for this messageId
+            // If no new updates, just update duration of existing intermediate messages
             setChatMessages(prev => prev.map(msg => {
               if (msg.isIntermediate && msg.messageId === messageId) {
-                // Find the most recent intermediate message and update its duration
-                const intermediateMessages = prev.filter(m => m.isIntermediate && m.messageId === messageId);
-                if (intermediateMessages.length > 0) {
-                  const mostRecent = intermediateMessages[intermediateMessages.length - 1];
-                  if (msg.id === mostRecent.id) {
-                    return { ...msg, duration };
-                  }
-                }
+                return { ...msg, duration };
               }
               return msg;
             }));
           }
 
-          // If processing is complete, show final message and mark intermediate messages as completed
+          // Check if processing is complete based on the latest update
+          const latestUpdate = updates[updates.length - 1];
           if (latestUpdate.status === 'completed' || latestUpdate.status === 'failed') {
             setTimeout(() => {
               setChatMessages(prev => {

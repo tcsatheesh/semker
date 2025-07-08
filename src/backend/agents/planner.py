@@ -7,7 +7,7 @@ agent (Billing, Roaming, Broadband, Ticketing, etc.) based on the content.
 """
 
 import json
-from typing import Callable, Optional, cast, Final, List, Dict
+from typing import Callable, Optional, cast, Final, List, Dict, Annotated
 
 from pydantic import BaseModel
 from semantic_kernel import Kernel
@@ -51,27 +51,32 @@ class Planner:
     _AGENT_TEMPLATE: Final[
         str
     ] = """
-    You are a Planner Agent that orchestrates specialized sub-agents to complete complex tasks across domains (e.g., Telecom, AI orchestration, music theory, etc.). You must:
+        You are a Planner Agent that orchestrates specialized sub-agents to complete complex tasks across domains (e.g., Telecom, AI orchestration, music theory, etc.). You must:
 
-    List of Available Agents:
-    {available_agents}
+        List of Available Agents:
+        {available_agents}
 
-    1. Break down the user’s request into stepwise components.
-    2. Show your thought process (“chain of thought”) progressively before executing subtasks.
-    3. Share intermediate updates after each planning step.
-    4. Invoke sub-agents only when necessary.
-    5. Deliver a final synthesized response only after all relevant steps are completed.
+        1. Break down the user’s request into stepwise components.
+        2. Show your thought process (“chain of thought”) progressively before executing subtasks.
+        3. Share intermediate updates after each planning step.
+        4. Invoke sub-agents only when necessary.
+        5. Deliver a final synthesized response only after all relevant steps are completed.
 
-    🧩 Key Behavior Rules:
-    - You MUST show reasoning before action.
-    - You MUST share progress updates before delivering the final answer.
-    - You MAY only use sub-agents when they are needed to complete a step.
-    - You MAY reuse results from previous steps if helpful.
-    - You MUST produce a final answer summarizing all delegated subtasks and decisions.
+        🧩 Key Behavior Rules:
+        - You MUST show reasoning before action.
+        - You MUST share progress updates before delivering the final answer.
+        - You MAY only use sub-agents when they are needed to complete a step.
+        - You MAY reuse results from previous steps if helpful.
+        - You MUST produce a final answer summarizing all delegated subtasks and decisions.
 
-    🎯 Prompt Template Logic:
-
-    """
+        🎯 Prompt Template Logic:
+            Step 1: Analyze the request and list necessary sub-goals. → [Reasoning Step 1 Output]
+            Step 2: Determine which sub-agent(s) are needed. → [Reasoning Step 2 Output]
+            Step 3: Describe what you expect from each sub-agent. → [Reasoning Step 3 Output]
+            Step 4: Call sub-agent(s) and await response. → [Intermediate Update: Sub-agent response summaries]
+            Step 5: Integrate all sub-agent inputs into a coherent final output. → [Reasoning Step 5 Output]
+            Final Answer: → [Synthesized response using all results]
+        """
 
     @classmethod
     def get_agent_template(cls) -> str:
@@ -92,8 +97,8 @@ class PlannerAgentResponse(BaseModel):
         reply: The planner's response message to the user
         agent_name: The name of the specialized agent to handle the request
     """
-
-    reply: str
+    steps: Annotated[Optional[List[str]], "The chain of thoughts or steps taken to process the request"]
+    reply: Annotated[str, "The agent's response message to the user"]
     agent_name: str
 
 
@@ -166,11 +171,6 @@ class PlannerAgent(BaseAgent):
         Raises:
             Exception: If there are issues with agent instantiation or processing
         """
-        _response = await self.get_response(
-            messages=message,
-            thread=thread,
-        )
-
         async for _response in self.invoke(messages=message, thread=thread):
             _result = PlannerAgentResponse.model_validate(
                 json.loads(_response.message.content),
@@ -179,7 +179,7 @@ class PlannerAgent(BaseAgent):
             on_intermediate_response(
                 message_id=message_id,
                 status=MessageStatus.IN_PROGRESS,
-                result=_result.reply,
+                result="\n".join(_result.steps),
                 agent_name=self.name,
             )
 

@@ -34,13 +34,44 @@ class Faq:
         return Services.FAQ_MCP_SERVER_URL
 
     # Agent template
+    # AGENT_TEMPLATE: Final[
+    #     str
+    # ] = """
+    #     You are the Faq Agent, responsible for answering frequently asked questions.
+    #     Your objective is to handle faq inquiries and provide accurate information.
+    #     Do not provide any personal or sensitive information.
+    #     Ensure that you follow the provided instructions carefully.
+    # """
     AGENT_TEMPLATE: Final[
         str
     ] = """
-        You are the Faq Agent, responsible for answering frequently asked questions.
-        Your objective is to handle faq inquiries and provide accurate information.
-        Do not provide any personal or sensitive information.
-        Ensure that you follow the provided instructions carefully.
+        You are the Faq Agent, responsible for handling frequently asked questions (FAQs) across supported domains (e.g., roaming, tariffs, billing).
+
+        🎯 Your primary goals:
+        - Handle general, factual questions that do NOT require user-specific data or tool-enabled actions.
+        - Provide clear, accurate, and context-relevant information.
+        - Follow strict reasoning logic before giving any answer.
+
+        🧠 Chain-of-Thought Approach (Mandatory):
+        You MUST respond using this step-by-step format:
+
+        🔎 Step 1: Analyze the user query.
+        → Break it into components and identify whether it’s a general FAQ.
+
+        🧩 Step 2: Decide what information is required.
+        → Identify conceptual, procedural, or policy-level data needed to respond.
+
+        🧪 Step 3: Determine whether tool access is required.
+        → If YES → Exit cleanly. Tool use is NOT permitted.
+        → If NO → Proceed with static explanation.
+
+        📨 Step 4: Respond clearly and accurately.
+        → Use domain knowledge only.
+        → Do NOT guess or interpolate data.
+        → Do NOT reference tools, help pages, or customer support.
+
+        🎯 Final Answer:
+        → Present response in a concise, well-structured format, using stepwise explanation when helpful.
     """
 
 
@@ -122,17 +153,20 @@ class FaqAgent(BaseAgent):
         await plugin.connect()
         self.kernel.add_plugin(plugin)
 
-        _response = await self.get_response(
-            messages=message,
-            thread=thread,
-        )
+        async for _response in self.invoke(messages=message, thread=thread):
+            _result = AgentLLMResponse.model_validate(
+                json.loads(_response.message.content),
+            )
+            on_intermediate_response(
+                message_id=message_id,
+                status=MessageStatus.IN_PROGRESS,
+                result="\n".join(_result.steps),
+                agent_name=self.name,
+            )
 
-        on_intermediate_response(
-            message_id=message_id,
-            status=MessageStatus.IN_PROGRESS,
-            result="Faq agent response received.",
-            agent_name=self.name,
-        )
+        _result = AgentLLMResponse.model_validate(
+                json.loads(_response.message.content),
+            )
 
         _llm_result: AgentLLMResponse = AgentLLMResponse.model_validate(
             json.loads(_response.message.content),

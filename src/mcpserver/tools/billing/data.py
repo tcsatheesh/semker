@@ -4,12 +4,14 @@ Billing data storage and management.
 This module contains the sample billing data used by the billing tools.
 """
 
+from datetime import datetime
+
 from .schemas import Bill, LineItem
 
 
 bills = [
     Bill(
-        month=11,
+        month=datetime.now().month - 1,
         details=[
             LineItem(
                 description="base",
@@ -35,7 +37,7 @@ bills = [
         currency="EUR",
     ),
     Bill(
-        month=10,
+        month=datetime.now().month - 2,
         details=[
             LineItem(
                 description="base",
@@ -61,7 +63,7 @@ bills = [
         currency="EUR",
     ),
     Bill(
-        month=9,
+        month=datetime.now().month - 3,
         details=[
             LineItem(
                 description="base",
@@ -87,7 +89,7 @@ bills = [
         currency="EUR",
     ),
     Bill(
-        month=8,
+        month=datetime.now().month - 4,
         details=[
             LineItem(
                 description="base",
