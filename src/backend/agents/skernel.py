@@ -135,7 +135,7 @@ class KernelUtils:
             - Connection timeout: 10 seconds (configurable)
             - Max connections: 100 (configurable)
             - Telemetry hooks for all request/response cycles
-        """
+        
             
         Returns:
             Kernel: Configured Semantic Kernel instance.
